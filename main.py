@@ -2,19 +2,19 @@
 
 # fem-gl-backend -- parsing binary mesh files and preparing
 # them for displaying via WebGL
-
+#
 # Copyright (C) 2017 Matthias Plock <matthias.plock@bam.de>
-
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -22,10 +22,11 @@
 Unpacks some binary files and finds the surface of the mesh.
 """
 
-import numpy as np
 import struct
+import numpy as np
+import sys
 
-class Unpack_Mesh:
+class UnpackMesh:
     """Unpacks mesh data from two binary files and does some magic to it."""
 
     timesteps = []              # Array to hold the timesteps
@@ -79,17 +80,32 @@ class Unpack_Mesh:
         self.timesteps.append(data)
 
 
+    def find_surface(self):
+        # Find the surface by counting the occurrence of elements
+        # Surface elements will occour fewer times
+        unique, counts = np.unique(self.elements, return_counts=True)
+        print(unique, counts)
+        print(np.sort(counts)[1:100])
+        # unique_x = np.unique(self.nodes[:,0])
+        # print(self.nodes)
+        # print(unique_x)
+        # sys.exit()
+        # num_of_nodes = self.nodes.shape[0]
+        # for it in np.arange(num_of_nodes):
+        #     pass
+        # print(num_of_nodes)
+
 def main():
     """Main routine of the program"""
 
     # Some test case
-    testdata = Unpack_Mesh(
+    testdata = UnpackMesh(
         node_path='testdata/case.nodes.bin',
         element_path='testdata/case.dc3d8.bin'
     )
     # Add a timestep
     testdata.add_timestep('testdata/nt11@00.1.bin')
-
+    testdata.find_surface()
 
 if __name__ == '__main__':
     main()
