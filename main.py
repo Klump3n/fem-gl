@@ -36,10 +36,8 @@ class UnpackMesh:
     def __init__(self, node_path, element_path):
         self.action(node_path, do='unpack', what='nodes')
         self.action(element_path, do='unpack', what='elements')
-        # self.unpack_nodes(node_path)
-        # self.unpack_elements(element_path)
 
-    def add_timestep_2(self, path):
+    def add_timestep(self, path):
         """Wrapper around the action function.
 
         Makes adding a timestep less confusing.
@@ -47,17 +45,25 @@ class UnpackMesh:
         self.action(path, do='add', what='timestep')
 
     def action(self, path, do, what):
+        """Unpack binary data.
+
+        Specifying the action will either unpack nodes or elements or add
+        a timestep.
+
+        Open a file and read it as binary, unpack into an array in a specified
+        format, cast the array to numpy and reshape it.
+        """
         if (do == 'unpack' and what == 'nodes'):
-            size_of_data = 8  # 8 bytes of ...
-            data_type = 'd'   # ... doubles
+            size_of_data = 8    # 8 bytes of ...
+            data_type = 'd'     # ... doubles
             points_per_unit = 3  # 3 coords per node
         elif (do == 'unpack' and what == 'elements'):
-            size_of_data = 4  # 4 bytes of ...
-            data_type = 'i'   # ... integers
+            size_of_data = 4    # 4 bytes of ...
+            data_type = 'i'     # ... integers
             points_per_unit = 8  # 8 points per element
         elif (do == 'add', what == 'timestep'):
-            size_of_data = 8  # 8 bytes of ...
-            data_type = 'd'   # ... doubles
+            size_of_data = 8    # 8 bytes of ...
+            data_type = 'd'     # ... doubles
             points_per_unit = 1  # 1 data point per unit.
         else:
             raise ValueError('Unknown parameters. Doing nothing.')
@@ -65,6 +71,8 @@ class UnpackMesh:
         f = open(path, 'rb')
         f_data = f.read()
         f_data_points = int(len(f_data) / size_of_data)
+
+        # i.e. '<123i' or '<123d'
         struct_format = '<{size}'.format(size=f_data_points) + data_type
         data = struct.unpack(struct_format, f_data)
         data = np.asarray(data)
@@ -79,53 +87,6 @@ class UnpackMesh:
         elif (do == 'add', what == 'timestep'):
             data = np.asarray(data)
             self.timesteps.append(data)
-
-    # def unpack_nodes(self, path):
-    #     """Unpack the nodes from the given path.
-
-    #     Read binary file, then get amount of data points (doubles). Finally
-    #     cast a numpy array and reshape it to (N, 3)
-    #     """
-    #     f = open(path, 'rb')
-    #     f_data = f.read()
-    #     f_data_points = int(len(f_data) / 8)
-    #     struct_format = '<{size}d'.format(size=f_data_points)
-    #     data = struct.unpack(struct_format, f_data)
-    #     data = np.asarray(data)
-    #     data.shape = (int(f_data_points/3), 3)
-    #     self.nodes = data
-    #     print('Parsed {nodes} number of nodes.'.format(nodes=data.shape[0]))
-
-    # def unpack_elements(self, path):
-    #     """Unpack the elements from the given path.
-
-    #     Read binary file, get amount of data points (integers). Finally
-    #     cast a numpy array and reshape it to (N, 8)
-    #     """
-    #     f = open(path, 'rb')
-    #     f_data = f.read()
-    #     f_data_points = int(len(f_data) / 4)
-    #     struct_format = '<{size}i'.format(size=f_data_points)
-    #     data = struct.unpack(struct_format, f_data)
-    #     data = np.asarray(data)
-    #     data.shape = (int(f_data_points/8), 8)
-    #     self.elements = data
-    #     print('Parsed {elements} number of elements.'.format(
-    #         elements=data.shape[0]))
-
-    # def add_timestep(self, path):
-    #     """Unpack the data from a given timestep (NOTE: specify).
-
-    #     Read binary file, get amount of data points (integers). Finally
-    #     cast a numpy array and append it to the class array.
-    #     """
-    #     f = open(path, 'rb')
-    #     f_data = f.read()
-    #     f_data_points = int(len(f_data) / 8)
-    #     struct_format = '<{size}d'.format(size=f_data_points)
-    #     data = struct.unpack(struct_format, f_data)
-    #     data = np.asarray(data)
-    #     self.timesteps.append(data)
 
     # @jit # If we ever run into time problems uncomment this. Compiling takes
     # some time but for larger meshes this should speed up analysing.
@@ -160,5 +121,5 @@ if __name__ == '__main__':
         element_path='testdata/case.dc3d8.bin'
     )
     # Add a timestep
-    testdata.add_timestep_2('testdata/nt11@00.1.bin')
+    testdata.add_timestep('testdata/nt11@00.1.bin')
     corner_points, border_points, surface_points = testdata.find_surface()
