@@ -177,6 +177,6 @@ if __name__ == '__main__':
 
     # Add a timestep
     testdata.add_timestep('testdata/nt11@00.1.bin')
-    corner_faces, \
-        border_faces, \
-        plane_faces = testdata.generate_surfaces_for_elements()
+    (corner_faces,
+     border_faces,
+     plane_faces) = testdata.generate_surfaces_for_elements()
