@@ -24,7 +24,6 @@ Unpacks some binary files and finds the surface of the mesh.
 
 import struct
 import numpy as np
-# from numba import jit
 import sys
 
 
@@ -69,14 +68,15 @@ class UnpackMesh:
             raise ValueError('Unknown parameters. Doing nothing.')
 
         f = open(path, 'rb')
-        f_data = f.read()
-        f_data_points = int(len(f_data) / size_of_data)
+        bin_data = f.read()
+        bin_data_points = int(len(bin_data) / size_of_data)
 
-        # i.e. '<123i' or '<123d'
-        struct_format = '<{size}'.format(size=f_data_points) + data_type
-        data = struct.unpack(struct_format, f_data)
+        # I.e. '<123i' or '<123d' for bin_data_points = 123
+        struct_format = '<{size}'.format(size=bin_data_points) + data_type
+
+        data = struct.unpack(struct_format, bin_data)
         data = np.asarray(data)
-        data.shape = (int(f_data_points/points_per_unit), points_per_unit)
+        data.shape = (int(bin_data_points/points_per_unit), points_per_unit)
         if (do == 'unpack' and what == 'nodes'):
             self.nodes = data
             print('Parsed {nodes} nodes.'.format(nodes=data.shape[0]))
@@ -88,8 +88,6 @@ class UnpackMesh:
             data = np.asarray(data)
             self.timesteps.append(data)
 
-    # @jit # If we ever run into time problems uncomment this. Compiling takes
-    # some time but for larger meshes this should speed up analysing.
     def find_surface(self):
         """Find the surface points in a given (NOTE: specify) data set.
 
@@ -100,26 +98,85 @@ class UnpackMesh:
         Return the points that define the surface in three distinct numpy
         arrays.
         """
-        # Find the surface by counting the occurrence of elements
-        # Surface elements will occour fewer times
-        unique, counts = np.unique(self.elements, return_counts=True)
-        corner_elements = np.where(counts == 1)
-        corner_points = self.nodes[corner_elements[0]]
-        border_elements = np.where(counts == 2)
-        border_points = self.nodes[border_elements[0]]
-        surface_elements = np.where(counts == 4)
-        surface_points = self.nodes[surface_elements[0]]
-        return corner_points, border_points, surface_points
+        unique_nodes, node_counts = np.unique(self.elements,
+                                              return_counts=True)
+        corner_nodes = np.where(node_counts == 1)
+        corner_points = self.nodes[corner_nodes[0]]
+        border_nodes = np.where(node_counts == 2)
+        border_points = self.nodes[border_nodes[0]]
+        plane_nodes = np.where(node_counts == 4)
+        plane_points = self.nodes[plane_nodes[0]]
+        return [corner_nodes, border_nodes, plane_nodes,
+                corner_points, border_points, plane_points]
+
+    def generate_surfaces_for_elements(self):
+        """Finds the outward faces of the mesh.
+
+        Count the unique occurrences of each node. For each element generate
+        the six (outward pointing) faces. Iterate over all the points of
+        each face and add the occurrences (as previously generated) up.
+        Faces at the corner will have a count of 9, faces at the border a
+        count of 12 and faces in the middle of the plane a count of 16.
+        """
+        unique_nodes, node_counts = np.unique(self.elements,
+                                              return_counts=True)
+
+        # The element indices that generate six outward pointing faces. Each
+        # element has 8 entries, so count from 0 to 7.
+        faces = [
+            [0, 1, 5, 4],
+            [1, 2, 6, 5],
+            [2, 3, 7, 6],
+            [3, 0, 4, 7],
+            [4, 5, 6, 7],
+            [3, 2, 1, 0]
+        ]
+
+        corner_faces = []
+        border_faces = []
+        plane_faces = []
+
+        for element in self.elements:
+            for face in faces:
+                node_weight = node_counts[element[face[0]]] \
+                              + node_counts[element[face[1]]] \
+                              + node_counts[element[face[2]]] \
+                              + node_counts[element[face[3]]]
+                if (node_weight == 9):
+                    corner_faces.append(
+                        [element[face[0]], element[face[1]],
+                         element[face[2]], element[face[3]]]
+                    )
+                elif (node_weight == 12):
+                    border_faces.append(
+                        [element[face[0]], element[face[1]],
+                         element[face[2]], element[face[3]]]
+                    )
+                elif (node_weight == 16):
+                    plane_faces.append(
+                        [element[face[0]], element[face[1]],
+                         element[face[2]], element[face[3]]]
+                    )
+                else:
+                    pass
+        corner_faces = np.asarray(corner_faces)
+        border_faces = np.asarray(border_faces)
+        plane_faces = np.asarray(plane_faces)
+        return [corner_faces, border_faces, plane_faces]
 
 
 if __name__ == '__main__':
-    """If we use the file as a standalone program call the main() function.
+    """If we use the file as a standalone program this is called.
     """
+
     # Some test case
     testdata = UnpackMesh(
         node_path='testdata/case.nodes.bin',
         element_path='testdata/case.dc3d8.bin'
     )
+
     # Add a timestep
     testdata.add_timestep('testdata/nt11@00.1.bin')
-    corner_points, border_points, surface_points = testdata.find_surface()
+    corner_faces, \
+        border_faces, \
+        plane_faces = testdata.generate_surfaces_for_elements()
