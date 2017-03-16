@@ -19,7 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """main.py
-Unpacks some binary files and finds the surface of the mesh.
+Unpacks some binary files and finds the surface of the mesh. Right now this is
+limited to C3D8 file format.
 """
 
 import struct
@@ -33,8 +34,16 @@ class UnpackMesh:
     timesteps = []
 
     def __init__(self, node_path, element_path):
+        """Initialise the class by:
+
+        - unpacking the nodes and the elements of the mesh
+        - initialising the surface quads for the elements
+        - initialising the triangulated surface
+        """
         self.action(node_path, do='unpack', what='nodes')
         self.action(element_path, do='unpack', what='elements')
+        self.surface_quads = None
+        self.surface_triangles = None
 
     def add_timestep(self, path):
         """Wrapper around the action function.
@@ -43,7 +52,11 @@ class UnpackMesh:
         """
         self.action(path, do='add', what='timestep')
 
-    def action(self, path, do, what):
+    def action(
+            self, path,
+            do,                 # {'unpack', 'add'}
+            what                # {'nodes', 'elements', 'timestep'}
+    ):
         """Unpack binary data.
 
         Specifying the action will either unpack nodes or elements or add
@@ -88,29 +101,9 @@ class UnpackMesh:
             data = np.asarray(data)
             self.timesteps.append(data)
 
-    def find_surface(self):
-        """Find the surface points in a given (NOTE: specify) data set.
-
-        Count the number of occurrences of any given data point
-        in the element definition. Parse the one that appear 1 (corner),
-        2 (border) or 4 (surface) times.
-
-        Return the points that define the surface in three distinct numpy
-        arrays.
-        """
-        unique_nodes, node_counts = np.unique(self.elements,
-                                              return_counts=True)
-        corner_nodes = np.where(node_counts == 1)
-        corner_points = self.nodes[corner_nodes[0]]
-        border_nodes = np.where(node_counts == 2)
-        border_points = self.nodes[border_nodes[0]]
-        plane_nodes = np.where(node_counts == 4)
-        plane_points = self.nodes[plane_nodes[0]]
-        return [corner_nodes, border_nodes, plane_nodes,
-                corner_points, border_points, plane_points]
-
     def generate_surfaces_for_elements(self):
         """Finds the outward faces of the mesh (in other words: the surface).
+        Returns a numpy array with the surface faces.
 
         The mesh consists of cubish elements with corner nodes.
         Count the unique occurrences of each node. For each element generate
@@ -127,9 +120,8 @@ class UnpackMesh:
         _, node_counts = np.unique(self.elements,
                                    return_counts=True)
 
-
         # The ordering of the element indices that generate six outward
-        # pointing faces. Each element has 8 entries, so count from 0 to 7.
+        # pointing faces. Each element has 8 entries, counting from 0.
         element_faces = [
             [0, 1, 5, 4],
             [1, 2, 6, 5],
@@ -139,9 +131,9 @@ class UnpackMesh:
             [3, 2, 1, 0]
         ]
 
-        faces = []
+        surfaces = []
 
-        def append_face(element, element_face):
+        def append_face_to_surfaces(element, element_face):
             """Append the face to the output array.
             """
             face = [
@@ -150,7 +142,7 @@ class UnpackMesh:
                 element[element_face[2]],
                 element[element_face[3]]
             ]
-            faces.append(face)
+            surfaces.append(face)
 
         for element in self.elements:
             for element_face in element_faces:
@@ -164,13 +156,63 @@ class UnpackMesh:
                         (node_weight == 12) or  # Border faces
                         (node_weight == 16)     # Plane faces
                 ):
-                    append_face(element, element_face)
+                    append_face_to_surfaces(element, element_face)
                 else:
                     pass
 
-        faces = np.asarray(faces)
-        print('Parsed {surfaces} surfaces.'.format(surfaces=faces.shape[0]))
-        return faces
+        self.surface_quads = np.asarray(surfaces)
+        print('Parsed {surface_quads} surface quads.'.format(
+            surface_quads=self.surface_quads.shape[0]))
+        return self.surface_quads
+
+    def generate_triangles_from_quads(self):
+        """From our list of quads generate outward pointing triangles.
+        """
+        if (self.surface_quads is None):
+            self.generate_surfaces_for_elements()
+
+        triangles = []
+
+        # Two triangles in every quad. This generates outward pointing
+        # triangles.
+        polygon_coordinates_in_quad = [
+            [0, 1, 2],
+            [0, 2, 3]
+        ]
+
+        for quad in self.surface_quads:
+            for polygon_coord in polygon_coordinates_in_quad:
+                triangle = [
+                    quad[polygon_coord[0]],
+                    quad[polygon_coord[1]],
+                    quad[polygon_coord[2]],
+                ]
+                triangles.append(triangle)
+
+        self.surface_triangles = np.asarray(triangles)
+        print('Parsed {surface_triangles} surface triangles.'.format(
+            surface_triangles=self.surface_triangles.shape[0]))
+        return self.surface_triangles
+
+    def trianglulate_surface_dumbest_possible(self):
+        """Get the coordinates of the triangles at the surface.
+
+        This is the dumbest possible way. It's much better to give a complete
+        list of all triangles and give an index list for OpenGL to work with.
+        """
+        if (self.surface_triangles is None):
+            self.generate_triangles_from_quads()
+
+        polygons = []
+        for triangle in self.surface_triangles:
+            polygon = [
+                self.nodes[triangle[0]],
+                self.nodes[triangle[1]],
+                self.nodes[triangle[2]]
+            ]
+            polygons.append(polygon)
+        self.polygons = np.asarray(polygons)
+        return self.polygons
 
 
 if __name__ == '__main__':
@@ -184,5 +226,5 @@ if __name__ == '__main__':
     )
 
     # Add a timestep
-    testdata.add_timestep('testdata/nt11@00.1.bin')
-    faces = testdata.generate_surfaces_for_elements()
+    # testdata.add_timestep('testdata/nt11@00.1.bin')
+    testdata.trianglulate_surface()
