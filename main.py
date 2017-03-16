@@ -29,38 +29,39 @@ import sys
 
 
 class UnpackMesh:
-    """Unpacks mesh data from two binary files and does some magic to it."""
-
-    timesteps = []
+    """Unpacks mesh data from two binary files and does some magic to it.
+    """
 
     def __init__(self, node_path, element_path):
         """Initialise the class by:
 
         - unpacking the nodes and the elements of the mesh
+        - initialising the timestep array
         - initialising the surface quads for the elements
         - initialising the triangulated surface
         """
-        self.action(node_path, do='unpack', what='nodes')
-        self.action(element_path, do='unpack', what='elements')
+        self.get_binary_data(node_path, do='unpack', what='nodes')
+        self.get_binary_data(element_path, do='unpack', what='elements')
+        self.timesteps = []
         self.surface_quads = None
         self.surface_triangles = None
 
     def add_timestep(self, path):
-        """Wrapper around the action function.
+        """Wrapper around the get_binary_data function.
 
         Makes adding a timestep less confusing.
         """
-        self.action(path, do='add', what='timestep')
+        self.get_binary_data(path, do='add', what='timestep')
 
-    def action(
+    def get_binary_data(
             self, path,
             do,                 # {'unpack', 'add'}
             what                # {'nodes', 'elements', 'timestep'}
     ):
         """Unpack binary data.
 
-        Specifying the action will either unpack nodes or elements or add
-        a timestep.
+        Specifying the what to do will either unpack nodes or elements or
+        add a timestep to self.timesteps.
 
         Open a file and read it as binary, unpack into an array in a specified
         format, cast the array to numpy and reshape it.
@@ -92,11 +93,12 @@ class UnpackMesh:
         data.shape = (int(bin_data_points/points_per_unit), points_per_unit)
         if (do == 'unpack' and what == 'nodes'):
             self.nodes = data
-            print('Parsed {nodes} nodes.'.format(nodes=data.shape[0]))
+            print('Parsed {nodes_t} nodes.'.format(
+                nodes_t=data.shape[0]))
         elif (do == 'unpack' and what == 'elements'):
             self.elements = data
-            print('Parsed {elements} elements.'.format(
-                elements=data.shape[0]))
+            print('Parsed {elements_t} elements.'.format(
+                elements_t=data.shape[0]))
         elif (do == 'add', what == 'timestep'):
             data = np.asarray(data)
             self.timesteps.append(data)
@@ -161,8 +163,8 @@ class UnpackMesh:
                     pass
 
         self.surface_quads = np.asarray(surfaces)
-        print('Parsed {surface_quads} surface quads.'.format(
-            surface_quads=self.surface_quads.shape[0]))
+        print('Parsed {surface_quads_t} surface quads.'.format(
+            surface_quads_t=self.surface_quads.shape[0]))
         return self.surface_quads
 
     def generate_triangles_from_quads(self):
@@ -190,8 +192,8 @@ class UnpackMesh:
                 triangles.append(triangle)
 
         self.surface_triangles = np.asarray(triangles)
-        print('Parsed {surface_triangles} surface triangles.'.format(
-            surface_triangles=self.surface_triangles.shape[0]))
+        print('Parsed {surface_triangles_t} surface triangles.'.format(
+            surface_triangles_t=self.surface_triangles.shape[0]))
         return self.surface_triangles
 
     def trianglulate_surface_dumbest_possible(self):
@@ -227,4 +229,4 @@ if __name__ == '__main__':
 
     # Add a timestep
     # testdata.add_timestep('testdata/nt11@00.1.bin')
-    testdata.trianglulate_surface()
+    testdata.trianglulate_surface_dumbest_possible()
