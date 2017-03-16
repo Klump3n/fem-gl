@@ -110,20 +110,22 @@ class UnpackMesh:
                 corner_points, border_points, plane_points]
 
     def generate_surfaces_for_elements(self):
-        """Finds the outward faces of the mesh.
+        """Finds the outward faces of the mesh (in other words: the surface).
 
+        The mesh consists of cubish elements with corner nodes.
         Count the unique occurrences of each node. For each element generate
         the six (outward pointing) faces. Iterate over all the points of
         each face and add the occurrences (as previously generated) up.
         Faces at the corner will have a count of 9, faces at the border a
         count of 12 and faces in the middle of the plane a count of 16.
+        (You might want to draw it on a piece of paper.)
         """
-        unique_nodes, node_counts = np.unique(self.elements,
-                                              return_counts=True)
+        _, node_counts = np.unique(self.elements,
+                                   return_counts=True)
 
-        # The element indices that generate six outward pointing faces. Each
-        # element has 8 entries, so count from 0 to 7.
-        faces = [
+        # The ordering of the element indices that generate six outward
+        # pointing faces. Each element has 8 entries, so count from 0 to 7.
+        element_faces = [
             [0, 1, 5, 4],
             [1, 2, 6, 5],
             [2, 3, 7, 6],
@@ -132,37 +134,69 @@ class UnpackMesh:
             [3, 2, 1, 0]
         ]
 
+        faces = []
         corner_faces = []
         border_faces = []
         plane_faces = []
 
+        def dump_face(element, element_face):
+            face = [
+                element[element_face[0]],
+                element[element_face[1]],
+                element[element_face[2]],
+                element[element_face[3]]
+            ]
+            faces.append(face)
+
         for element in self.elements:
-            for face in faces:
-                node_weight = node_counts[element[face[0]]] \
-                              + node_counts[element[face[1]]] \
-                              + node_counts[element[face[2]]] \
-                              + node_counts[element[face[3]]]
-                if (node_weight == 9):
-                    corner_faces.append(
-                        [element[face[0]], element[face[1]],
-                         element[face[2]], element[face[3]]]
-                    )
-                elif (node_weight == 12):
-                    border_faces.append(
-                        [element[face[0]], element[face[1]],
-                         element[face[2]], element[face[3]]]
-                    )
-                elif (node_weight == 16):
-                    plane_faces.append(
-                        [element[face[0]], element[face[1]],
-                         element[face[2]], element[face[3]]]
-                    )
+            for element_face in element_faces:
+                node_weight = node_counts[element[element_face[0]]] \
+                              + node_counts[element[element_face[1]]] \
+                              + node_counts[element[element_face[2]]] \
+                              + node_counts[element[element_face[3]]]
+
+                if (
+                        (node_weight == 9) or
+                        (node_weight == 12) or
+                        (node_weight == 16)
+                ):
+                    dump_face(element, element_face)
                 else:
                     pass
-        corner_faces = np.asarray(corner_faces)
-        border_faces = np.asarray(border_faces)
-        plane_faces = np.asarray(plane_faces)
-        return [corner_faces, border_faces, plane_faces]
+
+                # # Corner faces
+                # if (node_weight == 9):
+                #     dump_face(element, element_face)
+                #     # corner_face = [
+                #     #     element[element_face[0]],
+                #     #     element[element_face[1]],
+                #     #     element[element_face[2]],
+                #     #     element[element_face[3]]
+                #     # ]
+                #     # corner_faces.append(corner_face)
+                #     # faces.append(corner_face)
+                # # Border faces
+                # elif (node_weight == 12):
+                #     dump_face(element, element_face)
+                #     # border_faces.append(
+                #     #     [element[element_face[0]], element[element_face[1]],
+                #     #      element[element_face[2]], element[element_face[3]]]
+                #     # )
+                # # Plane faces
+                # elif (node_weight == 16):
+                #     dump_face(element, element_face)
+                #     # plane_faces.append(
+                #     #     [element[element_face[0]], element[element_face[1]],
+                #     #      element[element_face[2]], element[element_face[3]]]
+                #     # )
+                # # Anything that reaches into the element
+                # else:
+                #     pass
+        # corner_faces = np.asarray(corner_faces)
+        # border_faces = np.asarray(border_faces)
+        # plane_faces = np.asarray(plane_faces)
+        return np.asarray(faces)
+        # return [corner_faces, border_faces, plane_faces]
 
 
 if __name__ == '__main__':
@@ -177,6 +211,8 @@ if __name__ == '__main__':
 
     # Add a timestep
     testdata.add_timestep('testdata/nt11@00.1.bin')
-    (corner_faces,
-     border_faces,
-     plane_faces) = testdata.generate_surfaces_for_elements()
+    # (corner_faces,
+    #  border_faces,
+    #  plane_faces) = testdata.generate_surfaces_for_elements()
+    faces = testdata.generate_surfaces_for_elements()
+    print(faces.shape)
