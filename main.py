@@ -216,6 +216,10 @@ class UnpackMesh:
         self.polygons = np.asarray(polygons)
         return self.polygons
 
+    def trianglulate_surface(self):
+        if (self.surface_triangles is None):
+            self.generate_triangles_from_quads()
+
 
 if __name__ == '__main__':
     """If we use the file as a standalone program this is called.
