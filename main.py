@@ -244,25 +244,25 @@ class UnpackMesh:
 
         for triangle in self.surface_triangles[:-1]:  # All but the last one
             for corner in triangle:
-                f.write('{x}, {y}, {z},\n'.format(
+                f.write('{x},{y},{z},'.format(
                     x=self.nodes[corner, 0],
                     y=self.nodes[corner, 1],
                     z=self.nodes[corner, 2]
                 ))
                 temp_string = get_rgb(float(self.timesteps[0][corner]))
-                g.write(temp_string + ',\n')
+                g.write(temp_string + ',')
         for triangle in self.surface_triangles[-1:]:  # All but the last one
             # print(triangle)
             for corner in triangle[:-1]:
-                f.write('{x}, {y}, {z},\n'.format(
+                f.write('{x},{y},{z},'.format(
                     x=self.nodes[corner, 0],
                     y=self.nodes[corner, 1],
                     z=self.nodes[corner, 2]
                 ))
                 temp_string = get_rgb(float(self.timesteps[0][corner]))
-                g.write(temp_string + ',\n')
-            for corner in triangle[-1:]:
-                f.write('{x}, {y}, {z}'.format(
+                g.write(temp_string + ',')
+            for corner in triangle[-1:]:  # So we dont write a comma and newline
+                f.write('{x},{y},{z}'.format(
                     x=self.nodes[corner, 0],
                     y=self.nodes[corner, 1],
                     z=self.nodes[corner, 2]
@@ -272,12 +272,47 @@ class UnpackMesh:
         f.close()
         g.close()
 
-    # def trianglulate_surface(self):
-    #     """Create a array with unique surface nodes and a vertex buffer array.
-    #     """
-    #     if (self.surface_triangles is None):
-    #         self.generate_triangles_from_quads()
+    def boil_down_surface_triangles(self):
+        """Rewrite all indices.
+        """
+        unique_nodes = np.unique(self.elements).shape[0]
+        node_map = [None]*unique_nodes
+        for index, value in enumerate(np.unique(self.surface_triangles)):
+            node_map[value] = index
 
+        unique_triangles = np.unique(self.surface_triangles)
+        f = open('testfile', 'w')
+        for triangle in unique_triangles[:-1]:
+            f.write('{x},{y},{z},'.format(
+                x=str(self.nodes[triangle][0]),
+                y=str(self.nodes[triangle][1]),
+                z=str(self.nodes[triangle][2])
+            ))
+        for triangle in unique_triangles[-1:]:
+            f.write('{x},{y},{z}'.format(
+                x=str(self.nodes[triangle][0]),
+                y=str(self.nodes[triangle][1]),
+                z=str(self.nodes[triangle][2])
+            ))
+        f.close()
+        g = open('indexlist', 'w')
+        for triangle in self.surface_triangles[:-1]:
+            for corner in triangle:
+                g.write('{corner_t},'.format(corner_t=node_map[corner]))
+        for triangle in self.surface_triangles[-1:]:
+            for corner in triangle[:-1]:
+                g.write('{corner_t},'.format(corner_t=node_map[corner]))
+            for corner in triangle[-1:]:
+                g.write('{corner_t}o'.format(corner_t=node_map[corner]))
+        g.close()
+
+    def trianglulate_surface(self):
+        """Create a array with unique surface nodes and a vertex buffer array.
+        """
+        if (self.surface_triangles is None):
+            self.generate_triangles_from_quads()
+
+        # print(np.unique(self.surface_triangles).shape)
 
 if __name__ == '__main__':
     """If we use the file as a standalone program this is called.
@@ -291,6 +326,8 @@ if __name__ == '__main__':
 
     # Add a timestep
     testdata.add_timestep('testdata/nt11@16.7.bin')
-    testdata.trianglulate_surface_dumbest_possible()
-    testdata.generate_output()
+    # testdata.trianglulate_surface_dumbest_possible()
+    testdata.trianglulate_surface()
+    testdata.boil_down_surface_triangles()
+    # testdata.generate_output()
     # print(testdata.timesteps[0].max())
