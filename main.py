@@ -30,7 +30,7 @@ import sys
 class UnpackMesh:
     """Unpacks mesh data from two binary files and does some magic to it."""
 
-    timesteps = []              # Array to hold the timesteps
+    timesteps = []
 
     def __init__(self, node_path, element_path):
         self.action(node_path, do='unpack', what='nodes')
@@ -120,8 +120,13 @@ class UnpackMesh:
         count of 12 and faces in the middle of the plane a count of 16.
         (You might want to draw it on a piece of paper.)
         """
+        # self.elements is a map that points from each element to the nodes
+        # that constitute an element. In that sense two neighbouring elements
+        # will share at least 1 (corner) node. So that node will then appear
+        # at least twice in self.elements
         _, node_counts = np.unique(self.elements,
                                    return_counts=True)
+
 
         # The ordering of the element indices that generate six outward
         # pointing faces. Each element has 8 entries, so count from 0 to 7.
@@ -135,11 +140,10 @@ class UnpackMesh:
         ]
 
         faces = []
-        corner_faces = []
-        border_faces = []
-        plane_faces = []
 
-        def dump_face(element, element_face):
+        def append_face(element, element_face):
+            """Append the face to the output array.
+            """
             face = [
                 element[element_face[0]],
                 element[element_face[1]],
@@ -156,47 +160,17 @@ class UnpackMesh:
                               + node_counts[element[element_face[3]]]
 
                 if (
-                        (node_weight == 9) or
-                        (node_weight == 12) or
-                        (node_weight == 16)
+                        (node_weight == 9) or  # Corner faces
+                        (node_weight == 12) or  # Border faces
+                        (node_weight == 16)     # Plane faces
                 ):
-                    dump_face(element, element_face)
+                    append_face(element, element_face)
                 else:
                     pass
 
-                # # Corner faces
-                # if (node_weight == 9):
-                #     dump_face(element, element_face)
-                #     # corner_face = [
-                #     #     element[element_face[0]],
-                #     #     element[element_face[1]],
-                #     #     element[element_face[2]],
-                #     #     element[element_face[3]]
-                #     # ]
-                #     # corner_faces.append(corner_face)
-                #     # faces.append(corner_face)
-                # # Border faces
-                # elif (node_weight == 12):
-                #     dump_face(element, element_face)
-                #     # border_faces.append(
-                #     #     [element[element_face[0]], element[element_face[1]],
-                #     #      element[element_face[2]], element[element_face[3]]]
-                #     # )
-                # # Plane faces
-                # elif (node_weight == 16):
-                #     dump_face(element, element_face)
-                #     # plane_faces.append(
-                #     #     [element[element_face[0]], element[element_face[1]],
-                #     #      element[element_face[2]], element[element_face[3]]]
-                #     # )
-                # # Anything that reaches into the element
-                # else:
-                #     pass
-        # corner_faces = np.asarray(corner_faces)
-        # border_faces = np.asarray(border_faces)
-        # plane_faces = np.asarray(plane_faces)
-        return np.asarray(faces)
-        # return [corner_faces, border_faces, plane_faces]
+        faces = np.asarray(faces)
+        print('Parsed {surfaces} surfaces.'.format(surfaces=faces.shape[0]))
+        return faces
 
 
 if __name__ == '__main__':
@@ -211,8 +185,4 @@ if __name__ == '__main__':
 
     # Add a timestep
     testdata.add_timestep('testdata/nt11@00.1.bin')
-    # (corner_faces,
-    #  border_faces,
-    #  plane_faces) = testdata.generate_surfaces_for_elements()
     faces = testdata.generate_surfaces_for_elements()
-    print(faces.shape)
