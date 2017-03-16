@@ -216,9 +216,67 @@ class UnpackMesh:
         self.polygons = np.asarray(polygons)
         return self.polygons
 
-    def trianglulate_surface(self):
-        if (self.surface_triangles is None):
-            self.generate_triangles_from_quads()
+    def generate_output(self):
+        """Produce some test output.
+        """
+        f = open('surface.triangles', 'w')
+        g = open('surface.colors', 'w')
+
+        def get_rgb(temp):
+            if (temp < 20):
+                r = 0
+                g = 255 - temp/275
+                b = temp/255
+                g = np.clip(g, 0, 255)
+                b = np.clip(b, 0, 255)
+            if (temp > 20):
+                r = temp/10
+                g = 255 - temp/10
+                b = 0
+                g = np.clip(g, 0, 255)
+                r = np.clip(r, 0, 255)
+            else:
+                r = 0
+                g = 255 - temp/100
+                b = 0
+
+            return '{r}, {g}, {b}'.format(r=str(r), g=str(g), b=str(b))
+
+        for triangle in self.surface_triangles[:-1]:  # All but the last one
+            for corner in triangle:
+                f.write('{x}, {y}, {z},\n'.format(
+                    x=self.nodes[corner, 0],
+                    y=self.nodes[corner, 1],
+                    z=self.nodes[corner, 2]
+                ))
+                temp_string = get_rgb(float(self.timesteps[0][corner]))
+                g.write(temp_string + ',\n')
+        for triangle in self.surface_triangles[-1:]:  # All but the last one
+            # print(triangle)
+            for corner in triangle[:-1]:
+                f.write('{x}, {y}, {z},\n'.format(
+                    x=self.nodes[corner, 0],
+                    y=self.nodes[corner, 1],
+                    z=self.nodes[corner, 2]
+                ))
+                temp_string = get_rgb(float(self.timesteps[0][corner]))
+                g.write(temp_string + ',\n')
+            for corner in triangle[-1:]:
+                f.write('{x}, {y}, {z}'.format(
+                    x=self.nodes[corner, 0],
+                    y=self.nodes[corner, 1],
+                    z=self.nodes[corner, 2]
+                ))
+                temp_string = get_rgb(float(self.timesteps[0][corner]))
+                g.write(temp_string)
+        f.close()
+        g.close()
+
+    # def trianglulate_surface(self):
+    #     """Create a array with unique surface nodes and a vertex buffer array.
+    #     """
+    #     if (self.surface_triangles is None):
+    #         self.generate_triangles_from_quads()
 
 
 if __name__ == '__main__':
@@ -232,5 +290,7 @@ if __name__ == '__main__':
     )
 
     # Add a timestep
-    # testdata.add_timestep('testdata/nt11@00.1.bin')
+    testdata.add_timestep('testdata/nt11@16.7.bin')
     testdata.trianglulate_surface_dumbest_possible()
+    testdata.generate_output()
+    # print(testdata.timesteps[0].max())
