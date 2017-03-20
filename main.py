@@ -221,8 +221,8 @@ class UnpackMesh:
         """Produce some test output. This does not generate small files, it
         just stores the nodes and colors.
         """
-        f = open('surface.triangles', 'w')
-        g = open('surface.colors', 'w')
+        triangle_file = open('surface.triangles', 'w')
+        temperature_file = open('surface.colors', 'w')
 
         def get_rgb(temp):
             # NOTE: this takes considerable time. Use binning later on.
@@ -233,33 +233,32 @@ class UnpackMesh:
 
         for triangle in self.surface_triangles[:-1]:  # All but the last one
             for corner in triangle:
-                f.write('{x},{y},{z},'.format(
+                triangle_file.write('{x},{y},{z},'.format(
                     x=self.nodes[corner, 0],
                     y=self.nodes[corner, 1],
                     z=self.nodes[corner, 2]
                 ))
                 temp_string = get_rgb(float(self.timesteps[0][corner]))
-                g.write(temp_string + ',')
+                temperature_file.write(temp_string + ',')
         for triangle in self.surface_triangles[-1:]:  # All but the last one
-            # print(triangle)
             for corner in triangle[:-1]:
-                f.write('{x},{y},{z},'.format(
+                triangle_file.write('{x},{y},{z},'.format(
                     x=self.nodes[corner, 0],
                     y=self.nodes[corner, 1],
                     z=self.nodes[corner, 2]
                 ))
                 temp_string = get_rgb(float(self.timesteps[0][corner]))
-                g.write(temp_string + ',')
+                temperature_file.write(temp_string + ',')
             for corner in triangle[-1:]:  # No comma and newline
-                f.write('{x},{y},{z}'.format(
+                triangle_file.write('{x},{y},{z}'.format(
                     x=self.nodes[corner, 0],
                     y=self.nodes[corner, 1],
                     z=self.nodes[corner, 2]
                 ))
                 temp_string = get_rgb(float(self.timesteps[0][corner]))
-                g.write(temp_string)
-        f.close()
-        g.close()
+                temperature_file.write(temp_string)
+        triangle_file.close()
+        temperature_file.close()
 
     def boil_down_surface_triangles(self):
         """Rewrite all indices. Generate a file with all triangles and
@@ -278,37 +277,45 @@ class UnpackMesh:
             color = cm.gnuplot2(int(temp), bytes=True)
             return '{r},{g},{b}'.format(r=color[0], g=color[1], b=color[2])
 
+        triangle_file = open('triangle_file', 'w')
+        indexlist_file = open('indexlist_file', 'w')
+        temperature_file = open('temperature_file', 'w')
+
         unique_triangles = np.unique(self.surface_triangles)
-        f = open('triangle_file', 'w')
-        g = open('indexlist_file', 'w')
-        h = open('temperature_file', 'w')
+
+        # Split up because the last one can not have a newline or comma.
         for triangle in unique_triangles[:-1]:
-            temp_string = get_rgb(float(self.timesteps[0][triangle]))
-            f.write('{x},{y},{z},'.format(
+            triangle_file.write('{x},{y},{z},'.format(
                 x=str(self.nodes[triangle][0]),
                 y=str(self.nodes[triangle][1]),
                 z=str(self.nodes[triangle][2])
             ))
-            h.write(temp_string + ',')
+            temp_string = get_rgb(float(self.timesteps[0][triangle]))
+            temperature_file.write(temp_string + ',')
         for triangle in unique_triangles[-1:]:
-            temp_string = get_rgb(float(self.timesteps[0][triangle]))
-            f.write('{x},{y},{z}'.format(
+            triangle_file.write('{x},{y},{z}'.format(
                 x=str(self.nodes[triangle][0]),
                 y=str(self.nodes[triangle][1]),
                 z=str(self.nodes[triangle][2])
             ))
-            h.write(temp_string)
+            temp_string = get_rgb(float(self.timesteps[0][triangle]))
+            temperature_file.write(temp_string)
+
         for triangle in self.surface_triangles[:-1]:
             for corner in triangle:
-                g.write('{corner_t},'.format(corner_t=node_map[corner]))
+                indexlist_file.write('{corner_t},'.format(
+                    corner_t=node_map[corner]))
         for triangle in self.surface_triangles[-1:]:
             for corner in triangle[:-1]:
-                g.write('{corner_t},'.format(corner_t=node_map[corner]))
+                indexlist_file.write('{corner_t},'.format(
+                    corner_t=node_map[corner]))
             for corner in triangle[-1:]:
-                g.write('{corner_t}o'.format(corner_t=node_map[corner]))
-        f.close()
-        g.close()
-        h.close()
+                indexlist_file.write('{corner_t}'.format(
+                    corner_t=node_map[corner]))
+
+        triangle_file.close()
+        indexlist_file.close()
+        temperature_file.close()
 
 
 if __name__ == '__main__':
@@ -324,7 +331,7 @@ if __name__ == '__main__':
     # Add a timestep
     testdata.add_timestep('testdata/nt11@16.7.bin')
     # testdata.trianglulate_surface_dumbest_possible()
-    testdata.trianglulate_surface()
+    testdata.generate_triangles_from_quads()
     testdata.boil_down_surface_triangles()
-    testdata.generate_output()
+    # testdata.generate_output()
     # print(testdata.timesteps[0].max())
