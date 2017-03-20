@@ -25,6 +25,7 @@ limited to C3D8 file format.
 
 import struct
 import numpy as np
+import matplotlib.cm as cm
 import sys
 
 
@@ -217,30 +218,18 @@ class UnpackMesh:
         return self.polygons
 
     def generate_output(self):
-        """Produce some test output.
+        """Produce some test output. This does not generate small files, it
+        just stores the nodes and colors.
         """
         f = open('surface.triangles', 'w')
         g = open('surface.colors', 'w')
 
         def get_rgb(temp):
-            if (temp < 20):
-                r = 0
-                g = 255 - temp/275
-                b = temp/255
-                g = np.clip(g, 0, 255)
-                b = np.clip(b, 0, 255)
-            if (temp > 20):
-                r = temp/10
-                g = 255 - temp/10
-                b = 0
-                g = np.clip(g, 0, 255)
-                r = np.clip(r, 0, 255)
-            else:
-                r = 0
-                g = 255 - temp/100
-                b = 0
-
-            return '{r}, {g}, {b}'.format(r=str(r), g=str(g), b=str(b))
+            # NOTE: this takes considerable time. Use binning later on.
+            # Good ones are afmhot, CMRmap, gist_heat, gnuplot, gnuplot2.
+            # See http://matplotlib.org/users/colormaps.html for more.
+            color = cm.gnuplot2(int(temp), bytes=True)
+            return '{r},{g},{b}'.format(r=color[0], g=color[1], b=color[2])
 
         for triangle in self.surface_triangles[:-1]:  # All but the last one
             for corner in triangle:
@@ -261,7 +250,7 @@ class UnpackMesh:
                 ))
                 temp_string = get_rgb(float(self.timesteps[0][corner]))
                 g.write(temp_string + ',')
-            for corner in triangle[-1:]:  # So we dont write a comma and newline
+            for corner in triangle[-1:]:  # No comma and newline
                 f.write('{x},{y},{z}'.format(
                     x=self.nodes[corner, 0],
                     y=self.nodes[corner, 1],
@@ -273,29 +262,42 @@ class UnpackMesh:
         g.close()
 
     def boil_down_surface_triangles(self):
-        """Rewrite all indices.
+        """Rewrite all indices. Generate a file with all triangles and
+        a list with references to that list, the order in which they are drawn.
         """
+
         unique_nodes = np.unique(self.elements).shape[0]
         node_map = [None]*unique_nodes
         for index, value in enumerate(np.unique(self.surface_triangles)):
             node_map[value] = index
 
+        def get_rgb(temp):
+            # NOTE: this takes considerable time. Use binning later on.
+            # Good ones are afmhot, CMRmap, gist_heat, gnuplot, gnuplot2.
+            # See http://matplotlib.org/users/colormaps.html for more.
+            color = cm.gnuplot2(int(temp), bytes=True)
+            return '{r},{g},{b}'.format(r=color[0], g=color[1], b=color[2])
+
         unique_triangles = np.unique(self.surface_triangles)
-        f = open('testfile', 'w')
+        f = open('triangle_file', 'w')
+        g = open('indexlist_file', 'w')
+        h = open('temperature_file', 'w')
         for triangle in unique_triangles[:-1]:
+            temp_string = get_rgb(float(self.timesteps[0][triangle]))
             f.write('{x},{y},{z},'.format(
                 x=str(self.nodes[triangle][0]),
                 y=str(self.nodes[triangle][1]),
                 z=str(self.nodes[triangle][2])
             ))
+            h.write(temp_string + ',')
         for triangle in unique_triangles[-1:]:
+            temp_string = get_rgb(float(self.timesteps[0][triangle]))
             f.write('{x},{y},{z}'.format(
                 x=str(self.nodes[triangle][0]),
                 y=str(self.nodes[triangle][1]),
                 z=str(self.nodes[triangle][2])
             ))
-        f.close()
-        g = open('indexlist', 'w')
+            h.write(temp_string)
         for triangle in self.surface_triangles[:-1]:
             for corner in triangle:
                 g.write('{corner_t},'.format(corner_t=node_map[corner]))
@@ -304,15 +306,10 @@ class UnpackMesh:
                 g.write('{corner_t},'.format(corner_t=node_map[corner]))
             for corner in triangle[-1:]:
                 g.write('{corner_t}o'.format(corner_t=node_map[corner]))
+        f.close()
         g.close()
+        h.close()
 
-    def trianglulate_surface(self):
-        """Create a array with unique surface nodes and a vertex buffer array.
-        """
-        if (self.surface_triangles is None):
-            self.generate_triangles_from_quads()
-
-        # print(np.unique(self.surface_triangles).shape)
 
 if __name__ == '__main__':
     """If we use the file as a standalone program this is called.
@@ -329,5 +326,5 @@ if __name__ == '__main__':
     # testdata.trianglulate_surface_dumbest_possible()
     testdata.trianglulate_surface()
     testdata.boil_down_surface_triangles()
-    # testdata.generate_output()
+    testdata.generate_output()
     # print(testdata.timesteps[0].max())
