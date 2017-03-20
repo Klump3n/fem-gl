@@ -183,6 +183,8 @@ class UnpackMesh:
             [0, 2, 3]
         ]
 
+        print('Triangulating surface.')
+
         for quad in self.surface_quads:
             for polygon_coord in polygon_coordinates_in_quad:
                 triangle = [
@@ -241,18 +243,57 @@ class UnpackMesh:
     #     triangle_file.close()
     #     temperature_file.close()
 
-    def generate_tet_files(self):
-        """Rewrite all indices. Generate a file with all triangles and
-        a list with references to that list, the order in which they are drawn.
+    def generate_triangle_files(self):
+        """Generates a list of unique nodes and a index list to generate
+        triangles from the node list.
         """
 
         if (self.surface_triangles is None):
             self.generate_triangles_from_quads()
 
         unique_nodes = np.unique(self.elements).shape[0]
-        node_map = [None]*unique_nodes
+        self.node_map = [None]*unique_nodes
         for index, value in enumerate(np.unique(self.surface_triangles)):
-            node_map[value] = index
+            self.node_map[value] = index
+
+        unique_triangles = np.unique(self.surface_triangles)
+
+        print('Writing triangles and indices.')
+
+        triangle_file = open('welding_sim.triangles', 'w')
+        indexlist_file = open('welding_sim.indices', 'w')
+
+        # Split up because the last one can not have a newline or comma.
+        for triangle in unique_triangles[:-1]:
+            triangle_file.write('{x},{y},{z},'.format(
+                x=str(self.nodes[triangle][0]),
+                y=str(self.nodes[triangle][1]),
+                z=str(self.nodes[triangle][2])
+            ))
+        for triangle in unique_triangles[-1:]:
+            triangle_file.write('{x},{y},{z}'.format(
+                x=str(self.nodes[triangle][0]),
+                y=str(self.nodes[triangle][1]),
+                z=str(self.nodes[triangle][2])
+            ))
+
+        # Generate an index list for OpenGL
+        for triangle in self.surface_triangles[:-1]:
+            for corner in triangle:
+                indexlist_file.write('{corner_t},'.format(
+                    corner_t=self.node_map[corner]))
+        for triangle in self.surface_triangles[-1:]:
+            for corner in triangle[:-1]:
+                indexlist_file.write('{corner_t},'.format(
+                    corner_t=self.node_map[corner]))
+            for corner in triangle[-1:]:
+                indexlist_file.write('{corner_t}'.format(
+                    corner_t=self.node_map[corner]))
+
+        triangle_file.close()
+        indexlist_file.close()
+
+    def generate_temperature_file(self, timestep):
 
         def get_rgb(temp):
             # NOTE: this takes considerable time. Use binning later on.
@@ -262,48 +303,23 @@ class UnpackMesh:
             color = cm.gnuplot2(int(temp), bytes=True)
             return '{r},{g},{b}'.format(r=color[0], g=color[1], b=color[2])
 
-        triangle_file = open('welding_sim.triangles', 'w')
-        indexlist_file = open('welding_sim.indices', 'w')
-        temperature_file = open('welding_sim.temperatures', 'w')
-
         unique_triangles = np.unique(self.surface_triangles)
+
+        print('Writing temperatures for timestep {timestep_t}'.format(
+            timestep_t=timestep))
+        temperature_file = open('welding_sim.temperatures', 'w')
 
         # Split up because the last one can not have a newline or comma.
         for triangle in unique_triangles[:-1]:
-            triangle_file.write('{x},{y},{z},'.format(
-                x=str(self.nodes[triangle][0]),
-                y=str(self.nodes[triangle][1]),
-                z=str(self.nodes[triangle][2])
-            ))
-            temp_string = get_rgb(float(self.timesteps[0][triangle]))
+            temp_string = get_rgb(float(self.timesteps[timestep][triangle]))
             temperature_file.write(temp_string + ',')
         for triangle in unique_triangles[-1:]:
-            triangle_file.write('{x},{y},{z}'.format(
-                x=str(self.nodes[triangle][0]),
-                y=str(self.nodes[triangle][1]),
-                z=str(self.nodes[triangle][2])
-            ))
-            temp_string = get_rgb(float(self.timesteps[0][triangle]))
+            temp_string = get_rgb(float(self.timesteps[timestep][triangle]))
             temperature_file.write(temp_string)
 
-        # Generate an index list for OpenGL
-        for triangle in self.surface_triangles[:-1]:
-            for corner in triangle:
-                indexlist_file.write('{corner_t},'.format(
-                    corner_t=node_map[corner]))
-        for triangle in self.surface_triangles[-1:]:
-            for corner in triangle[:-1]:
-                indexlist_file.write('{corner_t},'.format(
-                    corner_t=node_map[corner]))
-            for corner in triangle[-1:]:
-                indexlist_file.write('{corner_t}'.format(
-                    corner_t=node_map[corner]))
-
-        triangle_file.close()
-        indexlist_file.close()
         temperature_file.close()
 
-    def get_mesh_meta_data(self):
+    def generate_meta_file(self):
         """Get the meta-data for the mesh.
 
         Size, etc.
@@ -351,6 +367,6 @@ if __name__ == '__main__':
 
     # Add a timestep
     testdata.add_timestep('testdata/nt11@16.7.bin')
-    testdata.generate_tet_files()
-    # testdata.generate_output()
-    testdata.get_mesh_meta_data()
+    testdata.generate_triangle_files()
+    testdata.generate_temperature_file(timestep=0)
+    testdata.generate_meta_file()
