@@ -197,30 +197,11 @@ class UnpackMesh:
             surface_triangles_t=self.surface_triangles.shape[0]))
         return self.surface_triangles
 
-    def trianglulate_surface_dumbest_possible(self):
-        """Get the coordinates of the triangles at the surface.
-
-        This is the dumbest possible way. It's much better to give a complete
-        list of all triangles and give an index list for OpenGL to work with.
-        """
-        if (self.surface_triangles is None):
-            self.generate_triangles_from_quads()
-
-        polygons = []
-        for triangle in self.surface_triangles:
-            polygon = [
-                self.nodes[triangle[0]],
-                self.nodes[triangle[1]],
-                self.nodes[triangle[2]]
-            ]
-            polygons.append(polygon)
-        self.polygons = np.asarray(polygons)
-        return self.polygons
-
     def generate_output(self):
         """Produce some test output. This does not generate small files, it
         just stores the nodes and colors.
         """
+
         triangle_file = open('surface.triangles', 'w')
         temperature_file = open('surface.colors', 'w')
 
@@ -334,4 +315,3 @@ if __name__ == '__main__':
     testdata.generate_triangles_from_quads()
     testdata.boil_down_surface_triangles()
     # testdata.generate_output()
-    # print(testdata.timesteps[0].max())
