@@ -199,50 +199,6 @@ class UnpackMesh:
             surface_triangles_t=self.surface_triangles.shape[0]))
         return self.surface_triangles
 
-    # def generate_output(self):
-    #     """Produce some test output. This does not generate small files, it
-    #     just stores the nodes and colors.
-    #     """
-
-    #     triangle_file = open('surface.triangles', 'w')
-    #     temperature_file = open('surface.colors', 'w')
-
-    #     def get_rgb(temp):
-    #         # NOTE: this takes considerable time. Use binning later on.
-    #         # Good ones are afmhot, CMRmap, gist_heat, gnuplot, gnuplot2.
-    #         # See http://matplotlib.org/users/colormaps.html for more.
-    #         color = cm.gnuplot2(int(temp), bytes=True)
-    #         return '{r},{g},{b}'.format(r=color[0], g=color[1], b=color[2])
-
-    #     for triangle in self.surface_triangles[:-1]:  # All but the last one
-    #         for corner in triangle:
-    #             triangle_file.write('{x},{y},{z},'.format(
-    #                 x=self.nodes[corner, 0],
-    #                 y=self.nodes[corner, 1],
-    #                 z=self.nodes[corner, 2]
-    #             ))
-    #             temp_string = get_rgb(float(self.timesteps[0][corner]))
-    #             temperature_file.write(temp_string + ',')
-    #     for triangle in self.surface_triangles[-1:]:  # All but the last one
-    #         for corner in triangle[:-1]:
-    #             triangle_file.write('{x},{y},{z},'.format(
-    #                 x=self.nodes[corner, 0],
-    #                 y=self.nodes[corner, 1],
-    #                 z=self.nodes[corner, 2]
-    #             ))
-    #             temp_string = get_rgb(float(self.timesteps[0][corner]))
-    #             temperature_file.write(temp_string + ',')
-    #         for corner in triangle[-1:]:  # No comma and newline
-    #             triangle_file.write('{x},{y},{z}'.format(
-    #                 x=self.nodes[corner, 0],
-    #                 y=self.nodes[corner, 1],
-    #                 z=self.nodes[corner, 2]
-    #             ))
-    #             temp_string = get_rgb(float(self.timesteps[0][corner]))
-    #             temperature_file.write(temp_string)
-    #     triangle_file.close()
-    #     temperature_file.close()
-
     def generate_triangle_files(self):
         """Generates a list of unique nodes and a index list to generate
         triangles from the node list.
