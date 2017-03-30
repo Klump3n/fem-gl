@@ -118,9 +118,28 @@ function glRoutine(gl, vs, fs,
     drawScene(now);
 }
 
+function setCanvasMenu(){
+    var menu = document.createElement( 'div' );
+		document.body.appendChild( menu );
+
+		var some_link = document.createElement( 'button' );
+    some_link.onclick = function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/list_files', true);
+        xhr.send();
+    };
+		some_link.style.position = 'absolute';
+		some_link.style.top = '10px';
+    some_link.style.left = '10px';
+		some_link.innerHTML = 'Print LIST_FILES to terminal.';
+		menu.appendChild( some_link );
+}
+
 function main() {
     // Init WebGL.
     var gl = grabCanvas("webGlCanvas");
+
+    setCanvasMenu();
 
     // Promise to load the data from file.
     var trianglePromise = getDataSourcePromise("data/welding_sim.triangles");
@@ -138,8 +157,8 @@ function main() {
             temperaturePromise,
             indexPromise,
             metaPromise,
-            vertexShaderPromise,  // 2
-            fragmentShaderPromise, // 3
+            vertexShaderPromise,
+            fragmentShaderPromise,
         ]
         // ... then ...
     ).then(function(value) {
