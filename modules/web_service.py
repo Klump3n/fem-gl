@@ -2,6 +2,7 @@
 
 # conda install cherrypy
 import cherrypy
+import modules.mesh_parser
 
 class WebServer:
     """Host a web server on a given port and hand out the files in the path.
@@ -39,6 +40,10 @@ class WebServer:
             """Just serve the static dir.
             """
             pass
+
+        @cherrypy.expose
+        def list_files(self):
+            print('LIST ALL FILES')
 
 
 if __name__ == '__main__':
