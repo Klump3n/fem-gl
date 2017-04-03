@@ -52,7 +52,7 @@ class UnpackMesh:
 
         Makes adding a timestep less confusing.
         """
-        self.get_binary_data(path, do='add', what='timestep')
+        return self.get_binary_data(path, do='add', what='timestep')
 
     def get_binary_data(
             self, path,
@@ -103,6 +103,7 @@ class UnpackMesh:
         elif (do == 'add', what == 'timestep'):
             data = np.asarray(data)
             self.timesteps.append(data)
+        return data
 
     def generate_surfaces_for_elements(self):
         """Finds the outward faces of the mesh (in other words: the surface).
@@ -308,7 +309,7 @@ class UnpackMesh:
         metafile.write('{x_center_t},{y_center_t},{z_center_t}'.format(
             x_center_t=x_center, y_center_t=y_center, z_center_t=z_center))
         metafile.close()
-        return x_center, y_center, z_center
+        return np.asarray([x_center, y_center, z_center])
 
 
 if __name__ == '__main__':

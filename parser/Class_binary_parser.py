@@ -264,16 +264,19 @@ class UnpackMesh:
         print('Writing temperatures for timestep {timestep_t}'.format(
             timestep_t=timestep))
         temperature_file = open('welding_sim.temperatures', 'w')
+        temperature_file_new = open('welding_sim_new.temperatures', 'w')
 
         # Split up because the last one can not have a newline or comma.
         for triangle in unique_triangles[:-1]:
             temp_string = get_rgb(float(self.timesteps[timestep][triangle]))
             temperature_file.write(temp_string + ',')
+            temperature_file_new.write(str(float(self.timesteps[timestep][triangle])) + ',')
         for triangle in unique_triangles[-1:]:
             temp_string = get_rgb(float(self.timesteps[timestep][triangle]))
             temperature_file.write(temp_string)
-
+            temperature_file_new.write(str(float(self.timesteps[timestep][triangle])))
         temperature_file.close()
+        temperature_file_new.close()
 
     def generate_meta_file(self):
         """Get the meta-data for the mesh.
@@ -308,7 +311,7 @@ class UnpackMesh:
         metafile.write('{x_center_t},{y_center_t},{z_center_t}'.format(
             x_center_t=x_center, y_center_t=y_center, z_center_t=z_center))
         metafile.close()
-        return x_center, y_center, z_center
+        return str([x_center, y_center, z_center])
 
 
 if __name__ == '__main__':
@@ -325,4 +328,5 @@ if __name__ == '__main__':
     testdata.add_timestep('testdata/nt11@16.7.bin')
     testdata.generate_triangle_files()
     testdata.generate_temperature_file(timestep=0)
-    testdata.generate_meta_file()
+    test = testdata.generate_meta_file()
+    print(test)

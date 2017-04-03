@@ -62,9 +62,12 @@ def start_web_instance(args):
     print(start_msg)
 
     web_instance = fem_web.WebServer(
-        directory=html_dir,
+        html_directory=html_dir,
+        mesh_directory=mesh_dir,
         port=port)
     web_instance.start()
 
+
+# Start the program.
 ARGS = parse_commandline()
 start_web_instance(ARGS)

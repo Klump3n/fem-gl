@@ -17,6 +17,10 @@
  *
  */
 
+// Make the array for holding web gl data global.
+var dataHasChanged = false;
+var indexed_arrays;
+
 function grabCanvas(canvasElementName) {
     // Select the canvas element from the html
     var webGlCanvas = document.getElementById(canvasElementName);
@@ -37,29 +41,9 @@ function grabCanvas(canvasElementName) {
 }
 
 // This is called with established context and shaders loaded
-function glRoutine(gl, vs, fs,
-                   model_triangles, model_temperatures, model_indices, model_metadata) {
+function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
+
     var programInfo = twgl.createProgramInfo(gl, [vs, fs]);
-
-    var indexed_arrays = {
-        indices: {              // NOTE: This must be named indices or it will not work.
-            numComponents: 1,
-            data: model_indices.split(',')
-        },
-        a_position: {
-            numComponents: 3,
-            data: model_triangles.split(',')
-        },
-        a_color: {
-            numComponents: 3,
-            type: gl.UNSIGNED_BYTE,
-            normalized: true,
-            data: new Uint8Array(
-                model_temperatures.split(',')
-            )
-        }
-    };
-
 
     var modelMatrix = new ModelMatrix(gl);
 
@@ -79,6 +63,7 @@ function glRoutine(gl, vs, fs,
     modelMatrix.scaleWorld(scaleTheWorldBy);
 
     var bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
+
     twgl.resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
@@ -97,6 +82,13 @@ function glRoutine(gl, vs, fs,
     var transformationMatrix = twgl.m4.identity();
 
     function drawScene(now) {
+
+        if (dataHasChanged) {
+            console.log('Reloading');
+            // programInfo = twgl.createProgramInfo(gl, [vs, fs]);
+            bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
+            dataHasChanged = false;
+        };
 
         dt = (now - then)*.001;    // Conversion to seconds
         var dist = dt*Math.PI/180;  // in radiant
@@ -125,14 +117,32 @@ function setCanvasMenu(){
 		var some_link = document.createElement( 'button' );
     some_link.onclick = function() {
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/list_files', true);
+        xhr.open('POST', '/mesher_init', true);
         xhr.send();
     };
 		some_link.style.position = 'absolute';
 		some_link.style.top = '10px';
     some_link.style.left = '10px';
-		some_link.innerHTML = 'Print LIST_FILES to terminal.';
+		some_link.innerHTML = 'Init mesher.';
 		menu.appendChild( some_link );
+
+		var some_other_link = document.createElement( 'button' );
+    some_other_link.onclick = function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/get_some_data', true);
+        xhr.send();
+        xhr.onload = function() {
+            var temp_json = JSON.parse(xhr.responseText);
+            temp_string = temp_json['timestep'].join();
+            indexed_arrays['a_color']['data'] = new Uint8Array(temp_string.split(','));
+            dataHasChanged = true;
+        };
+    };
+		some_other_link.style.position = 'absolute';
+		some_other_link.style.top = '40px';
+    some_other_link.style.left = '10px';
+		some_other_link.innerHTML = 'Get timestep.';
+		menu.appendChild( some_other_link );
 }
 
 function main() {
@@ -150,6 +160,7 @@ function main() {
     var vertexShaderPromise = getDataSourcePromise("shaders/vertexShader.glsl.c");
     var fragmentShaderPromise = getDataSourcePromise("shaders/fragmentShader.glsl.c");
 
+    var temperaturePromise_new = getDataSourcePromise("data/welding_sim_new.temperatures");
     // Once all the promises are resolved...
     Promise.all(
         [
@@ -159,21 +170,52 @@ function main() {
             metaPromise,
             vertexShaderPromise,
             fragmentShaderPromise,
+            temperaturePromise_new,
         ]
         // ... then ...
     ).then(function(value) {
         // ... assign data to variables and ...
         var triangleSource = value[0];
         var temperatureSource = value[1];
+        // console.log(temperatureSource);
         var indexSource = value[2];
         var metaSource = value[3];
         var vertexShaderSource = value[4];
         var fragmentShaderSource = value[5];
+        var temperatureSource_new = value[6];
 
+        indexed_arrays = {
+            indices: {              // NOTE: This must be named indices or it will not work.
+                numComponents: 1,
+                data: indexSource.split(',')
+            },
+            a_position: {
+                numComponents: 3,
+                data: triangleSource.split(',')
+            },
+            a_color: {
+                numComponents: 3,
+                type: gl.UNSIGNED_BYTE,
+                normalized: true,
+                data: new Uint8Array(
+                    temperatureSource.split(',')
+                )
+            },
+            a_temp: {
+                numComponents: 1,
+                type: gl.UNSIGNED_BYTE,
+                normalized: false,
+                data: new Uint8Array(
+                    temperatureSource_new.split(',')
+                )
+            }
+
+        };
+        console.log(indexed_arrays['a_color']['data']);
         // ... call the GL routine (i.e. do the graphics stuff)
         glRoutine(gl,
                   vertexShaderSource, fragmentShaderSource,
-                  triangleSource, temperatureSource, indexSource, metaSource
+                  indexed_arrays, metaSource
                  );
     });
 };

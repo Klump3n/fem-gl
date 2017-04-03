@@ -5,11 +5,31 @@
 precision mediump float;
 
 in vec4 v_color;
+in float v_temp;
 
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
+float color_exp(in float temp, in float center, in float sigma){
+  return exp(-(float(temp) - center)*(float(temp) - center)/(2.*sigma*sigma));
+}
+
+float blue(in float temp){
+  return color_exp(temp, 0., .3);
+}
+
+float green(in float temp){
+  return color_exp(temp, 0.5, .3);
+}
+
+float red(in float temp){
+  return color_exp(temp, 1., 3.);
+}
+
 void main() {
-  // Just set the ouput to a constant redish-purple
-  outColor = v_color;
+  outColor.r = red(v_temp);
+  outColor.g = green(v_temp);
+  outColor.b = blue(v_temp);
+  outColor.a = 1.0;
+  /* outColor = v_color; */
 }
