@@ -15,15 +15,15 @@ float color_exp(in float temp, in float center, in float sigma){
 }
 
 float blue(in float temp){
-  return color_exp(temp, 0., .3);
+  return color_exp(temp, 1., 2.2);
 }
 
 float green(in float temp){
-  return color_exp(temp, 0.5, .3);
+  return color_exp(temp, 0.5, .2);
 }
 
 float red(in float temp){
-  return color_exp(temp, 1., 3.);
+  return color_exp(temp, 1., .2);
 }
 
 void main() {
@@ -31,5 +31,5 @@ void main() {
   outColor.g = green(v_temp);
   outColor.b = blue(v_temp);
   outColor.a = 1.0;
-  /* outColor = v_color; */
+  outColor = v_color;
 }

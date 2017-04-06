@@ -182,8 +182,11 @@ function main() {
         var metaSource = value[3];
         var vertexShaderSource = value[4];
         var fragmentShaderSource = value[5];
-        var temperatureSource_new = value[6];
 
+        // Temporary..
+        var temperatureSource_new = value[6];
+        
+        // ... generate an array for web gl to display, then ...
         indexed_arrays = {
             indices: {              // NOTE: This must be named indices or it will not work.
                 numComponents: 1,
@@ -193,7 +196,7 @@ function main() {
                 numComponents: 3,
                 data: triangleSource.split(',')
             },
-            a_color: {
+            a_color: {          // Old kid on the block.
                 numComponents: 3,
                 type: gl.UNSIGNED_BYTE,
                 normalized: true,
@@ -201,9 +204,9 @@ function main() {
                     temperatureSource.split(',')
                 )
             },
-            a_temp: {
+            a_temp: {           // New kid on the block.
                 numComponents: 1,
-                type: gl.UNSIGNED_BYTE,
+                type: gl.FLOAT,
                 normalized: false,
                 data: new Uint8Array(
                     temperatureSource_new.split(',')
@@ -211,7 +214,7 @@ function main() {
             }
 
         };
-        console.log(indexed_arrays['a_color']['data']);
+
         // ... call the GL routine (i.e. do the graphics stuff)
         glRoutine(gl,
                   vertexShaderSource, fragmentShaderSource,

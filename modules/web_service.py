@@ -89,12 +89,12 @@ class WebServer:
             # value and then remove the last comma
 
             # Read in a prepared temperature file..
-            f = open('../welding_sim_1.temperatures')
+            f = open('generated_files/welding_sim_0.temperatures')
             prepfile = f.read()
             f.close()
             prepfilearray = prepfile.split(',')
-            prepfilearray = list(map(int, prepfilearray))
-            print(prepfilearray)
+            # prepfilearray = list(map(int, prepfilearray))
+            # print(prepfilearray)
             meta = {'timestep': prepfilearray}
 
             # We need to keep this for when we assign colours in the shader
