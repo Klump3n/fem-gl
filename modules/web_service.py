@@ -19,11 +19,16 @@
 
 
 import os
-import numpy as np
+
 import json
+
+import numpy as np
+
 # conda install cherrypy
 import cherrypy
+
 import modules.mesh_parser as fem_mesh
+
 
 class WebServer:
     """Host a web server on a given port and hand out the files in the path.
@@ -46,11 +51,17 @@ class WebServer:
     def start(self):
         """Start the web server on the given port with the given config.
         """
+
+        # Set the port
         cherrypy.config.update(
             {'server.socket_port': self.port}
         )
+
+        # Load the server class for displaying fem data
         cherrypy.tree.mount(
             self.FemGL(mesh_directory=self.mesh_directory), '/', self.conf)
+
+        # Start the server
         cherrypy.engine.start()
         cherrypy.engine.block()
 
@@ -78,9 +89,11 @@ class WebServer:
             )
 
         @cherrypy.expose
-        # @cherrypy.tools.json_out()
-        # @cherrypy.tools.json_in()
         def get_some_data(self):
+            """On getting a POST:get_some_data from the webserver we give
+            the required data back.
+            """
+
             # Add a timestep
             timestep = self.mesh_index.add_timestep('nt11@00.1.bin')
             metafile = self.mesh_index.generate_meta_file()
@@ -100,4 +113,3 @@ class WebServer:
             # We need to keep this for when we assign colours in the shader
             # meta = {'timestep': timestep.flatten().tolist()}
             return json.dumps(meta)
-
