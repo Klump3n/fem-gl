@@ -101,8 +101,3 @@ class WebServer:
             # meta = {'timestep': timestep.flatten().tolist()}
             return json.dumps(meta)
 
-
-
-# if __name__ == '__main__':
-#     web_server = WebServer(directory='/home/mplock/coding/dev/fem-gl/html/', port=8008)
-#     web_server.start()
