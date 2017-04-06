@@ -305,10 +305,10 @@ class UnpackMesh:
         y_center = (y_max + y_min)/2
         z_center = (z_max + z_min)/2
 
-        metafile = open('welding_sim.metafile', 'w')
-        metafile.write('{x_center_t},{y_center_t},{z_center_t}'.format(
-            x_center_t=x_center, y_center_t=y_center, z_center_t=z_center))
-        metafile.close()
+        # metafile = open('welding_sim.metafile', 'w')
+        # metafile.write('{x_center_t},{y_center_t},{z_center_t}'.format(
+        #     x_center_t=x_center, y_center_t=y_center, z_center_t=z_center))
+        # metafile.close()
         return np.asarray([x_center, y_center, z_center])
 
 
