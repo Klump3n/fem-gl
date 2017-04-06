@@ -29,15 +29,15 @@ def parse_commandline():
     """Parse the command line and return the parsed arguments.
     """
 
-    parser = argparse.ArgumentParser(description='Start a web server for fem-gl. '\
-                                     'Direct your browser to [HOST_IP]:[PORT] '\
-                                     'with PORT being either 8008 or the '\
-                                     'supplied value.')
-    parser.add_argument('-p', '--port', default=8008,
-                        help='The port for the web server. Defaults to 8008.')
-    parser.add_argument('-m', '--mesh-dir', required=True,
-                        help='The directory in which we want '\
-                        'to look for mesh files.')
+    parser = argparse.ArgumentParser(
+        description='Start a web server for fem-gl. Direct your browser to '\
+        '[HOST_IP]:[PORT] with PORT being either 8008 or the supplied value.')
+    parser.add_argument(
+        '-p', '--port', default=8008,
+        help='The port for the web server. Defaults to 8008.')
+    parser.add_argument(
+        '-m', '--mesh-dir', required=True,
+        help='The directory in which we want to look for mesh files.')
     args = parser.parse_args()
 
     return args
