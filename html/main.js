@@ -160,7 +160,7 @@ function main() {
     var vertexShaderPromise = getDataSourcePromise("shaders/vertexShader.glsl.c");
     var fragmentShaderPromise = getDataSourcePromise("shaders/fragmentShader.glsl.c");
 
-    // var temperaturePromise_new = getDataSourcePromise("data/welding_sim_new.temperatures");
+    var temperaturePromise_new = getDataSourcePromise("data/welding_sim_new.temperatures");
     // Once all the promises are resolved...
     Promise.all(
         [
@@ -170,7 +170,7 @@ function main() {
             metaPromise,
             vertexShaderPromise,
             fragmentShaderPromise,
-            // temperaturePromise_new,
+            temperaturePromise_new,
         ]
         // ... then ...
     ).then(function(value) {
@@ -184,7 +184,7 @@ function main() {
         var fragmentShaderSource = value[5];
 
         // Temporary..
-        // var temperatureSource_new = value[6];
+        var temperatureSource_new = value[6];
         
         // ... generate an array for web gl to display, then ...
         indexed_arrays = {
@@ -203,15 +203,15 @@ function main() {
                 data: new Uint8Array(
                     temperatureSource.split(',')
                 )
-            }// ,
-            // a_temp: {           // New kid on the block.
-            //     numComponents: 1,
-            //     type: gl.FLOAT,
-            //     normalized: false,
-            //     data: new Uint8Array(
-            //         temperatureSource_new.split(',')
-            //     )
-            // }
+            },
+            a_temp: {           // New kid on the block.
+                numComponents: 1,
+                type: gl.FLOAT,
+                normalized: false,
+                data: new Float32Array(
+                    temperatureSource_new.split(',')
+                )
+            }
 
         };
 
