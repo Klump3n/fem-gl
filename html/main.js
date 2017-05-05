@@ -110,46 +110,112 @@ function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
     drawScene(now);
 }
 
-function setCanvasMenu(){
-    var menu = document.createElement( 'div' );
-		document.body.appendChild( menu );
+// function setCanvasMenu(){
+//     var menu = document.createElement( 'div' );
+//     menu.style.position = 'absolute';
+// 		menu.style.top = '10px';
+//     menu.style.left = '10px';
+// 		document.body.appendChild( menu );
 
-		var some_link = document.createElement( 'button' );
-    some_link.onclick = function() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/mesher_init', true);
-        xhr.send();
-    };
-		some_link.style.position = 'absolute';
-		some_link.style.top = '10px';
-    some_link.style.left = '10px';
-		some_link.innerHTML = 'Init mesher.';
-		menu.appendChild( some_link );
+//     var add_div = document.createElement( 'div' );
+//     add_div.style.position = 'relative';
+//     menu.appendChild( add_div );
 
-		var some_other_link = document.createElement( 'button' );
-    some_other_link.onclick = function() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/get_some_data', true);
-        xhr.send();
-        xhr.onload = function() {
-            var temp_json = JSON.parse(xhr.responseText);
-            temp_string = temp_json['timestep'].join();
-            indexed_arrays['a_color']['data'] = new Uint8Array(temp_string.split(','));
-            dataHasChanged = true;
-        };
-    };
-		some_other_link.style.position = 'absolute';
-		some_other_link.style.top = '40px';
-    some_other_link.style.left = '10px';
-		some_other_link.innerHTML = 'Get timestep.';
-		menu.appendChild( some_other_link );
-}
+//     var lists_div = document.createElement( 'div' );
+//     lists_div.style.position = 'relative';
+//     // init_div.style.clear = 'both';
+//     menu.appendChild( lists_div );
+
+//     var add_folder = document.createElement( 'button' );
+//     add_folder.setAttribute('tabindex', '0');
+//     add_folder.setAttribute('class', 'cl-add-objects-menu');
+//     // add_folder.style.position = 'relative';
+// 		add_folder.innerHTML = '+';
+//     add_folder.onclick = function() {
+//         var xhr = new XMLHttpRequest();
+//         xhr.open('POST', '/return_list_of_folders', true);
+//         xhr.send();
+//         xhr.onload = function() {
+//             var response = JSON.parse(xhr.responseText);
+//             // console.log(response['data_folders'][0]);
+//             var folder_list = display_folders(response['data_folders']);
+//             lists_div.appendChild(folder_list);
+//             // console.log(folder_list);
+//         };
+//     };
+//     add_div.appendChild( add_folder );
+
+
+//     function display_folders(data_folders) {
+
+//         var avail_objects = document.createElement('ul');
+//         avail_objects.setAttribute('class', 'cl-add-objects-menu-content');
+//         // avail_objects.innerHTML = 'Available folders';
+
+//         // Create an iterator over all data folders
+//         var iter = Object.keys(data_folders);
+//         for (it in iter){
+//             var item_in_list = document.createElement('li');
+//             var button_in_item = document.createElement('button');
+//             button_in_item.onclick = function() {};
+//             button_in_item.innerHTML = data_folders[it];
+//             button_in_item.setAttribute('id', data_folders[it]);
+//             item_in_list.appendChild( button_in_item );
+//             avail_objects.appendChild( item_in_list );
+//         };
+
+//         return avail_objects;
+//     };
+
+
+//     // var list_header = document.createElement( 'ul' );
+//     // list_header.innerHTML = 'Objekt A';
+//     // list_header.setAttribute('id', 'objekt_a');
+//     // var list_entry_1 = document.createElement( 'li' );
+//     // list_entry_1.innerHTML = 'Erstes Ding';
+//     // list_header.appendChild(list_entry_1);
+//     // var list_entry_2 = document.createElement( 'li' );
+//     // list_entry_2.innerHTML = 'Zweites Ding';
+//     // list_header.appendChild(list_entry_2);
+//     // lists_div.appendChild( list_header );
+
+// 		// var some_link = document.createElement( 'button' );
+//     // some_link.onclick = function() {
+//     //     var xhr = new XMLHttpRequest();
+//     //     xhr.open('POST', '/mesher_init', true);
+//     //     xhr.send();
+//     // };
+// 		// // some_link.style.position = 'relative';
+//     // // some_link.style.float = 'left';
+// 		// // some_link.style.top = '10px';
+//     // // some_link.style.left = '10px';
+// 		// some_link.innerHTML = 'Init mesher.';
+// 		// lists_div.appendChild( some_link );
+
+// 		// var some_other_link = document.createElement( 'button' );
+//     // some_other_link.onclick = function() {
+//     //     var xhr = new XMLHttpRequest();
+//     //     xhr.open('POST', '/get_some_data', true);
+//     //     xhr.send();
+//     //     xhr.onload = function() {
+//     //         var temp_json = JSON.parse(xhr.responseText);
+//     //         temp_string = temp_json['timestep'].join();
+//     //         indexed_arrays['a_color']['data'] = new Uint8Array(temp_string.split(','));
+//     //         dataHasChanged = true;
+//     //     };
+//     // };
+// 		// some_other_link.style.position = 'relative';
+// 		// // some_other_link.style.top = '40px';
+//     // // some_other_link.style.left = '10px';
+// 		// some_other_link.innerHTML = 'Get timestep.';
+// 		// init_div.appendChild( some_other_link );
+// }
 
 function main() {
     // Init WebGL.
     var gl = grabCanvas("webGlCanvas");
 
-    setCanvasMenu();
+    // setCanvasMenu();
 
     // Promise to load the data from file.
     var trianglePromise = getDataSourcePromise("data/welding_sim.triangles");
@@ -157,10 +223,15 @@ function main() {
     var indexPromise = getDataSourcePromise("data/welding_sim.indices");
     var metaPromise = getDataSourcePromise("data/welding_sim.metafile");
 
+    // var trianglePromise = getDataSourcePromise("data/dodecahedron.triangles");
+    // var indexPromise = getDataSourcePromise("data/dodecahedron.indices");
+    // var temperaturePromise_new = getDataSourcePromise("data/dodecahedron.colors");
+
     var vertexShaderPromise = getDataSourcePromise("shaders/vertexShader.glsl.c");
     var fragmentShaderPromise = getDataSourcePromise("shaders/fragmentShader.glsl.c");
 
     var temperaturePromise_new = getDataSourcePromise("data/welding_sim_new.temperatures");
+
     // Once all the promises are resolved...
     Promise.all(
         [

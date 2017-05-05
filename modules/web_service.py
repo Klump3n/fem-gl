@@ -79,6 +79,51 @@ class WebServer:
             pass
 
         @cherrypy.expose
+        def get_object_list(self):
+            """Return a list of folders that potentially hold FEM data.
+
+            On catching 'get_object_list'
+
+            Check all the files we find in self.mesh_directory, check if it's a
+            directory, if it's a directory check if there is a directory called
+            'fo' in there. If that's the case we add it to the list we return
+            in the end.
+
+            Returns a json file.
+            """
+            list_to_return = []
+            files_in_mesh_dir = os.listdir(self.mesh_directory)
+            for file_name in files_in_mesh_dir:
+                abs_file_path = os.path.join(self.mesh_directory, file_name)
+                if os.path.isdir(abs_file_path):
+                    file_output_dir = os.path.join(abs_file_path, 'fo')
+                    if os.path.isdir(file_output_dir):
+                        list_to_return.append(file_name)
+            return json.dumps({'data_folders': list_to_return})
+
+        @cherrypy.expose
+        def get_object_properties(self, object_name):
+            """Return a list of properties for a given element.
+
+            On catching 'get_object_properties'
+
+            MEANINGFUL DESCRIPTION HERE
+
+            Returns a json file.
+            """
+            object_directory = os.path.join(self.mesh_directory, object_name, 'fo')
+
+            object_timesteps = []
+            object_properties = []
+
+            files_in_fo = os.listdir(object_directory)
+            for timestep in files_in_fo:
+                object_timesteps.append(timestep)
+
+            return json.dumps({'object_timesteps': object_timesteps,
+                               'object_properties': object_properties})
+
+        @cherrypy.expose
         def mesher_init(self):
             """Load the mesher class.
             """

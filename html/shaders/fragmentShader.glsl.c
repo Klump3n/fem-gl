@@ -10,6 +10,33 @@ in float v_temp;
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
+/* Definition of color palette as per http://www.dhondt.de/
+ * n   r   g   b
+ * 
+ * 1  191   0   0
+ * 2  223  64   0
+ * 3  255 128   0
+ * 4  255 191   0
+ * 5  255 255   0
+ * 6  212 234   0
+ * 7  170 212   0
+ * 8  127 191   0
+ * 9   85 170   0
+ * 10  43 149   0
+ * 11   0 128   0
+ * 12   0 159  26
+ * 13   0 191  51
+ * 14   0 223  76
+ * 15   0 255 102
+ * 16   0 191 128
+ * 17   0 128 153
+ * 18   0  64 178
+ * 19   0   0 204
+ * 20  64   0 230
+ * 21 128   0 255
+ *
+ * */
+
 float color_exp(in float temp, in float center, in float sigma){
   return exp(-(float(temp) - center)*(float(temp) - center)/(2.*sigma*sigma));
 }
