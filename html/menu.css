@@ -39,7 +39,12 @@ canvas {
     top: 0px;
     width: 30px;
     height: 30px;
+    text-align: center;
+    vertical-align: middle;
+    color: white;
     background-color: navy;
+    font-size: 250%;
+    font-weight: bolder;
 }
 
 .add_objects_menu_container {
