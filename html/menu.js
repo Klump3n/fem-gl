@@ -1,9 +1,5 @@
 function main() {
 
-    var properties = ['Wireframe', 'Temperaturen', 'Stresses'];
-    var times = ['00.0', '00.1', '00.2', '00.3', '00.4', '00.5', '00.6', '00.7', '00.8', '00.9'];
-    var objects = ['Obj A', 'Obj B', 'Obj C'];
-
     var add_object_button = document.getElementById('add_objects_button');
     add_object_button.addEventListener("click", open_objects_menu);
     var add_objects_menu_container = document.getElementById('add_objects_menu_container');
@@ -104,20 +100,27 @@ function main() {
         var object_name = this.getAttribute('data-name');
         var objects_timestep_menu = document.getElementById('object_timestep_menu_padding_container'+object_name);
 
-        // Lade neue Eintraege aus dem Array
-        // Das hier dann mit XHR
-        var timesteps = times;
-
         var object_timestep_menu_padding_container = document.getElementById('object_timestep_menu_padding_container'+object_name);
 
-        for (var it in timesteps) {
-            var timestep_menu_item = document.createElement("div");
-            timestep_menu_item.innerHTML = timesteps[it];
-            timestep_menu_item.setAttribute("id", timesteps[it]);
-            timestep_menu_item.setAttribute("data-name", timesteps[it]);
-            // timestep_menu_item.setAttribute("class", "timestep_menu_item");
-            timestep_menu_item.addEventListener('click', select_timestep);
-            object_timestep_menu_padding_container.appendChild(timestep_menu_item);
+        // Load the timesteps via XHR. Do this every time to be able to
+        // update the menu.
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/get_object_timesteps?object_name='+object_name, true);
+        xhr.send();
+        xhr.onload = function() {
+            var temp_json = JSON.parse(xhr.responseText);
+            var timesteps = temp_json['object_timesteps'];
+
+            for (var it in timesteps) {
+                var timestep_menu_item = document.createElement("div");
+                timestep_menu_item.innerHTML = timesteps[it];
+                timestep_menu_item.setAttribute("id", 'timestep_menu_item_'+object_name+'_'+timesteps[it]);
+                timestep_menu_item.setAttribute("data-timestep", timesteps[it]);
+                timestep_menu_item.setAttribute("data-name", object_name);
+                // timestep_menu_item.setAttribute("class", "timestep_menu_item");
+                timestep_menu_item.addEventListener('click', select_timestep);
+                object_timestep_menu_padding_container.appendChild(timestep_menu_item);
+            };
         };
 
         objects_timestep_menu.style.visibility = 'visible';
@@ -127,7 +130,14 @@ function main() {
 
     function select_timestep() {
         var object_name = this.getAttribute('data-name');
-        console.log(this);
+        var timestep = this.getAttribute('data-timestep');
+        var object_current_timestep = document.getElementById('object_timestep_current'+object_name);
+        object_current_timestep.innerHTML = timestep;
+    }
+
+    function decrease_timestep() {
+        var object_name = this.getAttribute('data-name');
+        var current_timestep = document.getElementById();
     }
 
     function close_timestep_menu() {
@@ -139,15 +149,6 @@ function main() {
     }
 
     function build_menu(object_name) {
-
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/get_object_properties?object_name='+object_name, true);
-        xhr.send();
-        xhr.onload = function() {
-            var temp_json = JSON.parse(xhr.responseText);
-            object_list = temp_json['data_folders'];
-        };
 
         var objects_container = document.getElementById('objects_container');
 
@@ -189,7 +190,7 @@ function main() {
         var object_timestep_current = document.createElement('div');
         object_timestep_current.setAttribute('class', 'object_timestep_current');
         object_timestep_current.setAttribute('id', 'object_timestep_current'+object_name);
-        object_timestep_current.innerHTML = '##.##';
+        // object_timestep_current.innerHTML = '##.##';     // This is set later.
         object_timestep_current.addEventListener('click', open_timestep_menu);
         object_timestep_current.setAttribute('data-name', object_name);
 
@@ -210,15 +211,25 @@ function main() {
         object_property_container.setAttribute('class', 'object_property_container');
         object_property_container.setAttribute('id', 'object_property_container'+object_name);
 
-        // Parse properties via XHR here
-        for (var propertyId in properties) {
-            var property = properties[propertyId];
-            var object_property = document.createElement('div');
-            object_property.setAttribute('class', 'object_property');
-            object_property.setAttribute('id', 'object_property'+object_name+property);
-            object_property.innerHTML = property;
-            object_property_container.appendChild(object_property);
-        }
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/get_object_properties?object_name='+object_name, true);
+        xhr.send();
+        xhr.onload = function() {
+            var temp_json = JSON.parse(xhr.responseText);
+            var object_properties = temp_json['object_properties'];
+            var initial_timestep = temp_json['initial_timestep'];
+
+            object_timestep_current.innerHTML = initial_timestep;
+
+            for (var propertyId in object_properties) {
+                var property = object_properties[propertyId];
+                var object_property = document.createElement('div');
+                object_property.setAttribute('class', 'object_property');
+                object_property.setAttribute('id', 'object_property'+object_name+property);
+                object_property.innerHTML = property;
+                object_property_container.appendChild(object_property);
+            }
+        };
 
         var object_controls_container = document.createElement('div');
         object_controls_container.setAttribute('class', 'object_controls_container');

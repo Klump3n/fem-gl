@@ -19,7 +19,7 @@
 
 
 import os
-
+import re
 import json
 
 import numpy as np
@@ -80,9 +80,8 @@ class WebServer:
 
         @cherrypy.expose
         def get_object_list(self):
-            """Return a list of folders that potentially hold FEM data.
-
-            On catching 'get_object_list'
+            """Return a list of folders that potentially hold FEM data on
+            catching 'get_object_list'
 
             Check all the files we find in self.mesh_directory, check if it's a
             directory, if it's a directory check if there is a directory called
@@ -91,37 +90,87 @@ class WebServer:
 
             Returns a json file.
             """
-            list_to_return = []
             files_in_mesh_dir = os.listdir(self.mesh_directory)
+
+            data_folders = []
+
             for file_name in files_in_mesh_dir:
                 abs_file_path = os.path.join(self.mesh_directory, file_name)
                 if os.path.isdir(abs_file_path):
                     file_output_dir = os.path.join(abs_file_path, 'fo')
                     if os.path.isdir(file_output_dir):
-                        list_to_return.append(file_name)
-            return json.dumps({'data_folders': list_to_return})
+                        data_folders.append(file_name)
+            return json.dumps({'data_folders': data_folders})
 
         @cherrypy.expose
         def get_object_properties(self, object_name):
-            """Return a list of properties for a given element.
+            """Return a list of properties for a given element on catching
+            'get_object_properties'
 
-            On catching 'get_object_properties'
+            Go through all timestep folders and look in every ef- and nf-folder
+            for files. Append every file to an array, afterwards find the unique
+            files in that array. Append this list to a list containing an entry
+            for a simple wireframe (i.e. no field values, just the bare mesh).
 
-            MEANINGFUL DESCRIPTION HERE
+            Returns a json file.
+            """
+            object_directory = os.path.join(self.mesh_directory, object_name, 'fo')
+
+            # Get the smallest timestep.
+            dirs_in_fo = os.listdir(object_directory)
+
+            object_timesteps = []
+
+            for timestep in dirs_in_fo:
+                timestep_path = os.path.join(object_directory, timestep)
+                if os.path.isdir(timestep_path):
+                    object_timesteps.append(timestep)
+            object_timesteps = sorted(object_timesteps)
+
+            initial_timestep = object_timesteps[0]
+
+            # Get all available properties.
+            file_array = []
+            for path, _, files in os.walk(object_directory):
+                if (os.path.basename(path) == 'nf' or
+                    os.path.basename(path) == 'ef'):
+                    for single_file in files:
+                        if re.match(r'(.*)\.bin', single_file):
+                            file_array.append(single_file)
+            unique_field_names = np.unique(file_array)
+
+            object_properties = ['wireframe']
+
+            for field_name in unique_field_names:
+                # Remove the .bin ending from the file.
+                name_without_ending = re.match(r'(.*)\.bin', field_name).groups(0)[0]
+                object_properties.append(name_without_ending)
+
+            return json.dumps({'object_properties': object_properties,
+                               'initial_timestep': initial_timestep})
+
+        @cherrypy.expose
+        def get_object_timesteps(self, object_name):
+            """Return a list of the available timesteps for a given element on
+            catching 'get_object_timesteps'
+
+            Go through all the folders in the object/fo folder. Every folder
+            here is a timestep.
 
             Returns a json file.
             """
             object_directory = os.path.join(self.mesh_directory, object_name, 'fo')
 
             object_timesteps = []
-            object_properties = []
 
-            files_in_fo = os.listdir(object_directory)
-            for timestep in files_in_fo:
-                object_timesteps.append(timestep)
+            dirs_in_fo = os.listdir(object_directory)
 
-            return json.dumps({'object_timesteps': object_timesteps,
-                               'object_properties': object_properties})
+            for timestep in dirs_in_fo:
+                timestep_path = os.path.join(object_directory, timestep)
+                if os.path.isdir(timestep_path):
+                    object_timesteps.append(timestep)
+
+            return json.dumps({'object_timesteps': object_timesteps})
 
         @cherrypy.expose
         def mesher_init(self):
