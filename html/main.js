@@ -1,5 +1,5 @@
 /*
- * fem-gl-toying -- getting to terms with WebGL and JavaScript
+ * fem-gl -- getting to terms with WebGL and JavaScript
  * Copyright (C) 2017 Matthias Plock <matthias.plock@bam.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -118,19 +118,19 @@ function main() {
     // setCanvasMenu();
 
     // Promise to load the data from file.
-    var trianglePromise = getDataSourcePromise("data/welding_sim.triangles");
-    var temperaturePromise = getDataSourcePromise("data/welding_sim.temperatures");
-    var indexPromise = getDataSourcePromise("data/welding_sim.indices");
+    // var trianglePromise = getDataSourcePromise("data/welding_sim.triangles");
+    // var temperaturePromise = getDataSourcePromise("data/welding_sim.temperatures");
+    // var indexPromise = getDataSourcePromise("data/welding_sim.indices");
     var metaPromise = getDataSourcePromise("data/welding_sim.metafile");
 
-    // var trianglePromise = getDataSourcePromise("data/dodecahedron.triangles");
-    // var indexPromise = getDataSourcePromise("data/dodecahedron.indices");
-    // var temperaturePromise_new = getDataSourcePromise("data/dodecahedron.colors");
+    var trianglePromise = getDataSourcePromise("data/dodecahedron.triangles");
+    var indexPromise = getDataSourcePromise("data/dodecahedron.indices");
+    var temperaturePromise_new = getDataSourcePromise("data/dodecahedron.colors");
 
     var vertexShaderPromise = getDataSourcePromise("shaders/vertexShader.glsl.c");
     var fragmentShaderPromise = getDataSourcePromise("shaders/fragmentShader.glsl.c");
 
-    var temperaturePromise_new = getDataSourcePromise("data/welding_sim_new.temperatures");
+    // var temperaturePromise_new = getDataSourcePromise("data/welding_sim_new.temperatures");
 
     // Once all the promises are resolved...
     Promise.all(
