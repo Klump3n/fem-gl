@@ -177,37 +177,33 @@ class WebServer:
             return json.dumps({'object_timesteps': sorted_timesteps})
 
         @cherrypy.expose
-        def mesher_init(self):
+        def mesher_init(self, nodepath, elementpath):
             """Load the mesher class.
             """
             os.chdir(self.mesh_directory)
             self.mesh_index = fem_mesh.UnpackMesh(
-                node_path='case.nodes.bin',
-                element_path='case.dc3d8.bin'
+                node_path=nodepath,
+                element_path=elementpath
             )
 
+            surface_nodes = self.mesh_index.return_unique_surface_nodes()
+            surface_indexfile = self.mesh_index.return_surface_indices()
+            surface_metadata = self.mesh_index.return_metadata()
+
+            return json.dumps({'surface_nodes': surface_nodes,
+                               'surface_indexfile': surface_indexfile,
+                               'surface_metadata': surface_metadata.tolist()})
+
         @cherrypy.expose
-        def get_some_data(self):
+        def get_timestep_data(self, timestep):
             """On getting a POST:get_some_data from the webserver we give
             the required data back.
             """
 
-            # Add a timestep
-            timestep = self.mesh_index.add_timestep('nt11@00.1.bin')
-            metafile = self.mesh_index.generate_meta_file()
-            self.mesh_index.generate_triangles_from_quads()
-            # Make a string from the temperatures, add a comma between every
-            # value and then remove the last comma
+            timestep_data = self.mesh_index.return_data_for_unique_nodes(timestep)
 
-            # Read in a prepared temperature file..
-            f = open('generated_files/welding_sim_0.temperatures')
-            prepfile = f.read()
-            f.close()
-            prepfilearray = prepfile.split(',')
-            # prepfilearray = list(map(int, prepfilearray))
-            # print(prepfilearray)
-            meta = {'timestep': prepfilearray}
+            output_data = []
+            for datapoint in timestep_data:
+                output_data.append(datapoint[0])
 
-            # We need to keep this for when we assign colours in the shader
-            # meta = {'timestep': timestep.flatten().tolist()}
-            return json.dumps(meta)
+            return json.dumps({'timestep_data': output_data})

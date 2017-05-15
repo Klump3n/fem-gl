@@ -1,5 +1,5 @@
 /*
- * fem-gl-toying -- getting to terms with WebGL and JavaScript
+ * fem-gl -- getting to terms with WebGL and JavaScript
  * Copyright (C) 2017 Matthias Plock <matthias.plock@bam.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -53,7 +53,7 @@ function getDataSourcePromise(dataPath){
 
         // Promise to assign the loaded data to the source variable
         var assignDataToVar = dataPromise.then(function(value) {
-            console.log("Loading " + dataPath);
+            // console.log("Loading " + dataPath);
             dataSource = value;
         });
 

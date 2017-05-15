@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# fem-gl-backend -- parsing binary mesh files and preparing
+# fem-gl -- parsing binary mesh files and preparing
 # them for displaying via WebGL
 #
 # Copyright (C) 2017 Matthias Plock <matthias.plock@bam.de>
@@ -46,6 +46,7 @@ class UnpackMesh:
         self.timesteps = []
         self.surface_quads = None
         self.surface_triangles = None
+        self.unique_surface_triangles = None
 
     def add_timestep(self, path):
         """Wrapper around the get_binary_data function.
@@ -75,7 +76,7 @@ class UnpackMesh:
             size_of_data = 4    # 4 bytes of ...
             data_type = 'i'     # ... integers
             points_per_unit = 8  # 8 points per element
-        elif (do == 'add', what == 'timestep'):
+        elif (do == 'add' and what == 'timestep'):
             size_of_data = 8    # 8 bytes of ...
             data_type = 'd'     # ... doubles
             points_per_unit = 1  # 1 data point per unit.
@@ -200,55 +201,121 @@ class UnpackMesh:
             surface_triangles_t=self.surface_triangles.shape[0]))
         return self.surface_triangles
 
-    def generate_triangle_files(self):
-        """Generates a list of unique nodes and a index list to generate
-        triangles from the node list.
+    def return_unique_surface_nodes(self):
+        """Returns the unique surface triangles.
         """
+        if (self.unique_surface_triangles is None):
+            self.generate_unique_surface_triangles()
 
+        unique_surface_nodes = []
+        for triangle in self.unique_surface_triangles:
+            for corner in [0, 1, 2]:
+                unique_surface_nodes.append(self.nodes[triangle][corner])
+
+        return unique_surface_nodes
+
+    def return_surface_indices(self):
+        """Returns the indices for the OpenGL array triangles.
+
+        If a node is already present by means of another triangle, we dont want
+        to output it too. We dont want redundancy.
+        """
+        if (self.unique_surface_triangles is None):
+            self.generate_unique_surface_triangles()
+
+        # Figure out how many unique nodes we have.
+        unique_nodes = np.unique(self.elements).shape[0]
+
+        # Initialise an array for those unique nodes with None for every
+        # element.
+        self.node_map = [None]*unique_nodes
+
+        # Overwrite the None in this array with an index for the unique
+        # elements.
+        for index, value in enumerate(self.unique_surface_triangles):
+            self.node_map[value] = index
+
+        # We want to find out which index belongs to every corner of every
+        # triangle.
+        index_list = []
+        for triangle in self.surface_triangles:
+            for corner in triangle:
+                index_list.append(self.node_map[corner])
+
+        return index_list
+
+    def return_data_for_unique_nodes(self, timestep):
+        """Returns the (i.e.) temperature data for unique nodes.
+        """
+        if (self.unique_surface_triangles is None):
+            self.generate_unique_surface_triangles()
+
+        timestep_data = self.add_timestep('object a/fo/'+timestep+'/nf/temperatures.bin')
+
+        unique_surface_data = []
+        for triangle in self.unique_surface_triangles:
+            unique_surface_data.append(timestep_data[triangle])
+
+        return unique_surface_data
+
+
+    def generate_unique_surface_triangles(self):
+        """Generate the unique surface triangles from all the surface_triangles.
+        """
         if (self.surface_triangles is None):
             self.generate_triangles_from_quads()
 
-        unique_nodes = np.unique(self.elements).shape[0]
-        self.node_map = [None]*unique_nodes
-        for index, value in enumerate(np.unique(self.surface_triangles)):
-            self.node_map[value] = index
+        self.unique_surface_triangles = np.unique(self.surface_triangles)
 
-        unique_triangles = np.unique(self.surface_triangles)
+    # def generate_triangle_files(self):
+    #     """Generates a list of unique nodes and a index list to generate
+    #     triangles from the node list.
+    #     """
 
-        print('Writing triangles and indices.')
+    #     if (self.surface_triangles is None):
+    #         self.generate_triangles_from_quads()
 
-        triangle_file = open('welding_sim.triangles', 'w')
-        indexlist_file = open('welding_sim.indices', 'w')
+    #     unique_nodes = np.unique(self.elements).shape[0]
+    #     self.node_map = [None]*unique_nodes
+    #     for index, value in enumerate(np.unique(self.surface_triangles)):
+    #         self.node_map[value] = index
 
-        # Split up because the last one can not have a newline or comma.
-        for triangle in unique_triangles[:-1]:
-            triangle_file.write('{x},{y},{z},'.format(
-                x=str(self.nodes[triangle][0]),
-                y=str(self.nodes[triangle][1]),
-                z=str(self.nodes[triangle][2])
-            ))
-        for triangle in unique_triangles[-1:]:
-            triangle_file.write('{x},{y},{z}'.format(
-                x=str(self.nodes[triangle][0]),
-                y=str(self.nodes[triangle][1]),
-                z=str(self.nodes[triangle][2])
-            ))
+    #     unique_triangles = np.unique(self.surface_triangles)
 
-        # Generate an index list for OpenGL
-        for triangle in self.surface_triangles[:-1]:
-            for corner in triangle:
-                indexlist_file.write('{corner_t},'.format(
-                    corner_t=self.node_map[corner]))
-        for triangle in self.surface_triangles[-1:]:
-            for corner in triangle[:-1]:
-                indexlist_file.write('{corner_t},'.format(
-                    corner_t=self.node_map[corner]))
-            for corner in triangle[-1:]:
-                indexlist_file.write('{corner_t}'.format(
-                    corner_t=self.node_map[corner]))
+    #     print('Writing triangles and indices.')
 
-        triangle_file.close()
-        indexlist_file.close()
+    #     triangle_file = open('welding_sim.triangles', 'w')
+    #     indexlist_file = open('welding_sim.indices', 'w')
+
+    #     # Split up because the last one can not have a newline or comma.
+    #     for triangle in unique_triangles[:-1]:
+    #         triangle_file.write('{x},{y},{z},'.format(
+    #             x=str(self.nodes[triangle][0]),
+    #             y=str(self.nodes[triangle][1]),
+    #             z=str(self.nodes[triangle][2])
+    #         ))
+    #     for triangle in unique_triangles[-1:]:
+    #         triangle_file.write('{x},{y},{z}'.format(
+    #             x=str(self.nodes[triangle][0]),
+    #             y=str(self.nodes[triangle][1]),
+    #             z=str(self.nodes[triangle][2])
+    #         ))
+
+    #     # Generate an index list for OpenGL
+    #     for triangle in self.surface_triangles[:-1]:
+    #         for corner in triangle:
+    #             indexlist_file.write('{corner_t},'.format(
+    #                 corner_t=self.node_map[corner]))
+    #     for triangle in self.surface_triangles[-1:]:
+    #         for corner in triangle[:-1]:
+    #             indexlist_file.write('{corner_t},'.format(
+    #                 corner_t=self.node_map[corner]))
+    #         for corner in triangle[-1:]:
+    #             indexlist_file.write('{corner_t}'.format(
+    #                 corner_t=self.node_map[corner]))
+
+    #     triangle_file.close()
+    #     indexlist_file.close()
 
     def generate_temperature_file(self, timestep):
 
@@ -276,7 +343,7 @@ class UnpackMesh:
 
         temperature_file.close()
 
-    def generate_meta_file(self):
+    def return_metadata(self):
         """Get the meta-data for the mesh.
 
         Size, etc.
@@ -318,12 +385,14 @@ if __name__ == '__main__':
 
     # Some test case
     testdata = UnpackMesh(
-        node_path='testdata/case.nodes.bin',
-        element_path='testdata/case.dc3d8.bin'
+        node_path='example_data/case.nodes.bin',
+        element_path='example_data/case.dc3d8.bin'
     )
 
     # Add a timestep
-    testdata.add_timestep('testdata/nt11@16.7.bin')
-    testdata.generate_triangle_files()
-    testdata.generate_temperature_file(timestep=0)
-    testdata.generate_meta_file()
+    # testdata.add_timestep('testdata/nt11@16.7.bin')
+    # testdata.generate_triangle_files()
+    # testdata.generate_temperature_file(timestep=0)
+    # testdata.return_metadata()
+    testdata.return_surface()
+    testdata.return_surface_indices()

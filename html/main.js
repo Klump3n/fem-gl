@@ -17,6 +17,8 @@
  *
  */
 
+var gl;
+
 // Make the array for holding web gl data global.
 var dataHasChanged = false;
 var indexed_arrays;
@@ -47,11 +49,12 @@ function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
 
     var modelMatrix = new ModelMatrix(gl);
 
-    var centerModel = new Float32Array(model_metadata.split(','));
+    // var centerModel = new Float32Array(model_metadata.split(','));
+    var centerModel = model_metadata;
 
     var scaleTheWorldBy = 150;
     var tarPos = twgl.v3.mulScalar(centerModel, scaleTheWorldBy);
-    var camPos = twgl.v3.create(tarPos[0], tarPos[1], 110); // Center the z-axis over the model
+    var camPos = twgl.v3.create(tarPos[0], tarPos[1], 550); // Center the z-axis over the model
     var up = [0, -1, 0];
 
     modelMatrix.placeCamera(camPos, tarPos, up);
@@ -62,7 +65,9 @@ function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
     // Automate this...
     modelMatrix.scaleWorld(scaleTheWorldBy);
 
-    var bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
+    var bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays, drawType=gl.DYNAMIC_DRAW);
+
+    var testBuffer = twgl.createBufferFromTypedArray(gl, indexed_arrays, drawType=gl.DYNAMIC_DRAW);
 
     twgl.resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -78,15 +83,14 @@ function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
         then = 0,
         dt = 0;
 
-
     var transformationMatrix = twgl.m4.identity();
+
 
     function drawScene(now) {
 
         if (dataHasChanged) {
             console.log('Reloading');
-            // programInfo = twgl.createProgramInfo(gl, [vs, fs]);
-            bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
+            bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays, drawType=gl.DYNAMIC_DRAW);
             dataHasChanged = false;
         };
 
@@ -110,80 +114,172 @@ function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
     drawScene(now);
 }
 
+function edit_indexed_arrays(nodepath, elementpath, timestep) {
+    // var nodepath = 'object a/fo/00.1/mesh/case.nodes.bin';
+    // var elementpath = 'object a/fo/00.1/mesh/case.dc3d8.bin';
+
+    var node_file;
+    var index_file;
+    var meta_file;
+
+    var timestep_data;
+
+    var meshPromise = postDataPromise('/mesher_init?nodepath='+nodepath+'&elementpath='+elementpath);
+
+    meshPromise.then(function(value){
+
+        node_file = value['surface_nodes'];
+        index_file = value['surface_indexfile'];
+        meta_file = value['surface_metadata'];
+
+        var initialTimestepDataPromise = postDataPromise('/get_timestep_data?timestep='+timestep);
+
+        initialTimestepDataPromise.then(function(value){
+            timestep_data = value['timestep_data'];
+
+            indexed_arrays = {
+                indices: {              // NOTE: This must be named indices or it will not work.
+                    numComponents: 1,
+                    data: index_file,
+                    drawType: gl.DYNAMIC_DRAW
+                },
+                a_position: {
+                    numComponents: 3,
+                    data: node_file,
+                    drawType: gl.DYNAMIC_DRAW
+                },
+                a_temp: {
+                    numComponents: 1,
+                    type: gl.FLOAT,
+                    normalized: false,
+                    data: new Float32Array(
+                        timestep_data
+                    ),
+                    drawType: gl.DYNAMIC_DRAW
+                }
+            };
+            dataHasChanged = true;
+        });
+    });
+}
 
 function main() {
     // Init WebGL.
-    var gl = grabCanvas("webGlCanvas");
+    gl = grabCanvas("webGlCanvas");
 
-    // setCanvasMenu();
+    // // -----
 
-    // Promise to load the data from file.
-    // var trianglePromise = getDataSourcePromise("data/welding_sim.triangles");
-    // var temperaturePromise = getDataSourcePromise("data/welding_sim.temperatures");
-    // var indexPromise = getDataSourcePromise("data/welding_sim.indices");
-    var metaPromise = getDataSourcePromise("data/welding_sim.metafile");
+    // var nodepath = 'object a/fo/00.1/mesh/case.nodes.bin';
+    // var elementpath = 'object a/fo/00.1/mesh/case.dc3d8.bin';
 
-    var trianglePromise = getDataSourcePromise("data/dodecahedron.triangles");
-    var indexPromise = getDataSourcePromise("data/dodecahedron.indices");
-    var temperaturePromise_new = getDataSourcePromise("data/dodecahedron.colors");
+    // var node_file;
+    // var index_file;
+    // var meta_file;
 
-    var vertexShaderPromise = getDataSourcePromise("shaders/vertexShader.glsl.c");
-    var fragmentShaderPromise = getDataSourcePromise("shaders/fragmentShader.glsl.c");
+    // var timestep_data;
 
-    // var temperaturePromise_new = getDataSourcePromise("data/welding_sim_new.temperatures");
+    // var meshPromise = postDataPromise('/mesher_init?nodepath='+nodepath+'&elementpath='+elementpath);
 
-    // Once all the promises are resolved...
-    Promise.all(
-        [
-            trianglePromise,
-            temperaturePromise,
-            indexPromise,
-            metaPromise,
-            vertexShaderPromise,
-            fragmentShaderPromise,
-            temperaturePromise_new,
-        ]
-        // ... then ...
-    ).then(function(value) {
-        // ... assign data to variables and ...
-        var triangleSource = value[0];
-        var temperatureSource = value[1];
-        // console.log(temperatureSource);
-        var indexSource = value[2];
-        var metaSource = value[3];
-        var vertexShaderSource = value[4];
-        var fragmentShaderSource = value[5];
+    // meshPromise.then(function(value){
 
-        // Temporary..
-        var temperatureSource_new = value[6];
-        
-        // ... generate an array for web gl to display, then ...
+    //     node_file = value['surface_nodes'];
+    //     index_file = value['surface_indexfile'];
+    //     meta_file = value['surface_metadata'];
+
+    //     timestep='40.1';
+
+    //     var initialTimestepDataPromise = postDataPromise('/get_timestep_data?timestep='+timestep);
+
+    //     initialTimestepDataPromise.then(function(value){
+    //         timestep_data = value['timestep_data'];
+    //         console.log(index_file);
+    //         console.log(indexed_arrays);
+    //         indexed_arrays = {
+    //             indices: {              // NOTE: This must be named indices or it will not work.
+    //                 numComponents: 1,
+    //                 data: index_file
+    //             },
+    //             a_position: {
+    //                 numComponents: 3,
+    //                 data: node_file
+    //             },
+    //             a_temp: {
+    //                 numComponents: 1,
+    //                 type: gl.FLOAT,
+    //                 normalized: false,
+    //                 data: new Float32Array(
+    //                     timestep_data
+    //                 )
+    //             }
+    //         };
+    //         console.log(indexed_arrays);
+    //         loadShaders();
+    //     });
+    // });
+
+    // // -----
+
+    var node_file;
+    var index_file;
+    var meta_file;
+
+    var timestep_data;
+
+    var dodec_node_promise = getDataSourcePromise("data/dodecahedron.triangles");
+    var dodec_index_promise = getDataSourcePromise("data/dodecahedron.indices");
+    var dodec_colour_promise = getDataSourcePromise("data/dodecahedron.colors");
+
+    Promise.all([dodec_node_promise, dodec_index_promise, dodec_colour_promise]).then(function(value) {
+        node_file = value[0].split(',');
+        index_file = value[1].split(',');
+        meta_file = [0.0, 0.0, 0.0];
+        timestep_data = value[2].split(',');
+
+        loadShaders();
+    });
+
+    var vertexShaderSource;
+    var fragmentShaderSource;
+
+    function loadShaders() {
+        var vertexShaderPromise = getDataSourcePromise("shaders/vertexShader.glsl.c");
+        var fragmentShaderPromise = getDataSourcePromise("shaders/fragmentShader.glsl.c");
+
+        Promise.all([vertexShaderPromise, fragmentShaderPromise]).then(function(value) {
+            vertexShaderSource = value[0];
+            fragmentShaderSource = value[1];
+
+            prepareArrays();
+        });
+    }
+
+    function prepareArrays() {
+
+        var triangleSource = node_file;
+        var indexSource = index_file;
+        var metaSource = meta_file;
+        var temperatureSource = timestep_data;
+
         indexed_arrays = {
             indices: {              // NOTE: This must be named indices or it will not work.
+                drawType: gl.DYNAMIC_DRAW,
                 numComponents: 1,
-                data: indexSource.split(',')
+                data: indexSource
             },
             a_position: {
+                drawType: gl.DYNAMIC_DRAW,
                 numComponents: 3,
-                data: triangleSource.split(',')
+                data: triangleSource
             },
-            a_color: {          // Old kid on the block.
-                numComponents: 3,
-                type: gl.UNSIGNED_BYTE,
-                normalized: true,
-                data: new Uint8Array(
-                    temperatureSource.split(',')
-                )
-            },
-            a_temp: {           // New kid on the block.
+            a_temp: {
+                drawType: gl.DYNAMIC_DRAW,
                 numComponents: 1,
                 type: gl.FLOAT,
                 normalized: false,
                 data: new Float32Array(
-                    temperatureSource_new.split(',')
+                    temperatureSource
                 )
             }
-
         };
 
         // ... call the GL routine (i.e. do the graphics stuff)
@@ -191,5 +287,86 @@ function main() {
                   vertexShaderSource, fragmentShaderSource,
                   indexed_arrays, metaSource
                  );
-    });
+    }
+
+    // // Promise to load the data from file.
+    // var trianglePromise = getDataSourcePromise("data/welding_sim.triangles");
+    // var temperaturePromise = getDataSourcePromise("data/welding_sim.temperatures");
+    // var indexPromise = getDataSourcePromise("data/welding_sim.indices");
+    // var metaPromise = getDataSourcePromise("data/welding_sim.metafile");
+
+
+
+    // var temperaturePromise_new = getDataSourcePromise("data/welding_sim_new.temperatures");
+
+    // // Once all the promises are resolved...
+    // Promise.all(
+    //     [
+    //         trianglePromise,
+    //         temperaturePromise,
+    //         indexPromise,
+    //         metaPromise,
+    //         vertexShaderPromise,
+    //         fragmentShaderPromise,
+    //         temperaturePromise_new,
+    //         meshPromise,
+    //         initialTimestepDataPromise
+    //     ]
+    //     // ... then ...
+    // ).then(function(value) {
+    //     // ... assign data to variables and ...
+    //     // var triangleSource = value[0];
+    //     var triangleSource = node_file;
+
+    //     var temperatureSource = value[1];
+
+    //     // var indexSource = value[2];
+    //     var indexSource = index_file;
+    //     var metaSource = meta_file;
+    //     // var metaSource = value[3];
+
+    //     var vertexShaderSource = value[4];
+    //     var fragmentShaderSource = value[5];
+
+    //     // Temporary..
+    //     // var temperatureSource_new = value[6];
+    //     var temperatureSource_new = timestep_data;
+
+    //     // ... generate an array for web gl to display, then ...
+    //     indexed_arrays = {
+    //         indices: {              // NOTE: This must be named indices or it will not work.
+    //             numComponents: 1,
+    //             // data: indexSource.split(',')
+    //             data: indexSource
+    //         },
+    //         a_position: {
+    //             numComponents: 3,
+    //             data: triangleSource
+    //             // data: triangleSource.split(',')
+    //         },
+    //         a_color: {          // Old kid on the block.
+    //             numComponents: 3,
+    //             type: gl.UNSIGNED_BYTE,
+    //             normalized: true,
+    //             data: new Uint8Array(
+    //                 temperatureSource.split(',')
+    //             )
+    //         },
+    //         a_temp: {           // New kid on the block.
+    //             numComponents: 1,
+    //             type: gl.FLOAT,
+    //             normalized: false,
+    //             data: new Float32Array(
+    //                 temperatureSource_new.split(',')
+    //             )
+    //         }
+
+    //     };
+
+    //     // ... call the GL routine (i.e. do the graphics stuff)
+    //     glRoutine(gl,
+    //               vertexShaderSource, fragmentShaderSource,
+    //               indexed_arrays, metaSource
+    //              );
+    // });
 };

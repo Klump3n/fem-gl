@@ -269,5 +269,11 @@ function main() {
         object_padding.appendChild(object);
 
         objects_container.appendChild(object_padding);
+
+        edit_indexed_arrays(
+            nodepath='object a/fo/00.1/mesh/case.nodes.bin',
+            elementpath='object a/fo/00.1/mesh/case.dc3d8.bin',
+            timestep='00.1');
+
     }
 }
