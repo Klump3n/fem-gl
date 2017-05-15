@@ -162,15 +162,19 @@ class WebServer:
             object_directory = os.path.join(self.mesh_directory, object_name, 'fo')
 
             object_timesteps = []
+            sorted_timesteps = []
 
             dirs_in_fo = os.listdir(object_directory)
 
             for timestep in dirs_in_fo:
                 timestep_path = os.path.join(object_directory, timestep)
                 if os.path.isdir(timestep_path):
-                    object_timesteps.append(timestep)
+                    object_timesteps.append(float(timestep))
 
-            return json.dumps({'object_timesteps': object_timesteps})
+            object_timesteps = sorted(object_timesteps)
+            for timestep in object_timesteps:
+                sorted_timesteps.append(str(timestep))
+            return json.dumps({'object_timesteps': sorted_timesteps})
 
         @cherrypy.expose
         def mesher_init(self):
