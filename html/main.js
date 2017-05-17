@@ -20,7 +20,8 @@
 var gl;
 
 // Make the array for holding web gl data global.
-var dataHasChanged = false;
+var vertexDataHasChanged = false;
+var fragmentDataHasChanged = false;
 var indexed_arrays;
 var model_metadata;
 
@@ -83,9 +84,7 @@ function glRoutine(gl, vs, fs) {
     function drawScene(now) {
 
         // Check if our data has been updated at some point.
-        if (dataHasChanged) {
-            console.log('Reloading');
-
+        if (vertexDataHasChanged) {
             // Update the buffer.
             bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
 
@@ -93,7 +92,10 @@ function glRoutine(gl, vs, fs) {
             centerModel = model_metadata;
             modelMatrix.translateWorld(twgl.v3.negate(centerModel));
 
-            dataHasChanged = false;
+            vertexDataHasChanged = false;
+        } else if (fragmentDataHasChanged){
+            bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
+            fragmentDataHasChanged = false;
         };
 
         // Update the model view
@@ -110,9 +112,20 @@ function glRoutine(gl, vs, fs) {
     drawScene();
 }
 
+function update_timestep_data(timestep) {
+    var timestep_promise = postDataPromise('/get_timestep_data?timestep='+timestep);
+    var timestep_data;
+
+    timestep_promise.then(function(value){
+        timestep_data = value['timestep_data'];
+
+        indexed_arrays['a_temp']['data'] = new Float32Array(timestep_data);
+
+        fragmentDataHasChanged = true;
+    });
+}
+
 function edit_indexed_arrays(nodepath, elementpath, timestep) {
-    // var nodepath = 'object a/fo/00.1/mesh/case.nodes.bin';
-    // var elementpath = 'object a/fo/00.1/mesh/case.dc3d8.bin';
 
     var node_file;
     var index_file;
@@ -154,7 +167,7 @@ function edit_indexed_arrays(nodepath, elementpath, timestep) {
 
             model_metadata = meta_file;
 
-            dataHasChanged = true;
+            vertexDataHasChanged = true;
         });
     });
 }

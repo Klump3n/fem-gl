@@ -133,12 +133,48 @@ function main() {
         var timestep = this.getAttribute('data-timestep');
         var object_current_timestep = document.getElementById('object_timestep_current'+object_name);
         object_current_timestep.innerHTML = timestep;
+
+        update_timestep_data(timestep);
     }
 
     function decrease_timestep() {
         var object_name = this.getAttribute('data-name');
-        var current_timestep = document.getElementById();
-        // TODO: Make this work.
+        var object_current_timestep = document.getElementById(
+            'object_timestep_current'+object_name);
+
+        var current_timestep = object_current_timestep.innerHTML;
+
+        var previousTimestepPromise = postDataPromise(
+            '/get_timestep_before?current_timestep='+
+                current_timestep+'&object_name='+object_name);
+
+        previousTimestepPromise.then(function(value) {
+            var previous_timestep = value['previous_timestep'];
+            if (current_timestep != previous_timestep) {
+                update_timestep_data(previous_timestep);
+                object_current_timestep.innerHTML = previous_timestep;
+            }
+        });
+    }
+
+    function increase_timestep() {
+        var object_name = this.getAttribute('data-name');
+        var object_current_timestep = document.getElementById(
+            'object_timestep_current'+object_name);
+
+        var current_timestep = object_current_timestep.innerHTML;
+
+        var nextTimestepPromise = postDataPromise(
+            '/get_timestep_after?current_timestep='+
+                current_timestep+'&object_name='+object_name);
+
+        nextTimestepPromise.then(function(value) {
+            var next_timestep = value['next_timestep'];
+            if (current_timestep != next_timestep) {
+                update_timestep_data(next_timestep);
+                object_current_timestep.innerHTML = next_timestep;
+            }
+        });
     }
 
     function close_timestep_menu() {
@@ -186,7 +222,9 @@ function main() {
         var object_timestep_previous = document.createElement('div');
         object_timestep_previous.setAttribute('class', 'object_timestep_previous');
         object_timestep_previous.setAttribute('id', 'object_timestep_previous'+object_name);
+        object_timestep_previous.setAttribute('data-name', object_name);
         object_timestep_previous.innerHTML = '<';
+        object_timestep_previous.addEventListener('click', decrease_timestep);
 
         var object_timestep_current = document.createElement('div');
         object_timestep_current.setAttribute('class', 'object_timestep_current');
@@ -198,7 +236,9 @@ function main() {
         var object_timestep_next = document.createElement('div');
         object_timestep_next.setAttribute('class', 'object_timestep_next');
         object_timestep_next.setAttribute('id', 'object_timestep_next'+object_name);
+        object_timestep_next.setAttribute('data-name', object_name);
         object_timestep_next.innerHTML = '>';
+        object_timestep_next.addEventListener('click', increase_timestep);
 
         var object_timestep_menu_padding_container = document.createElement('div');
         object_timestep_menu_padding_container.setAttribute('class', 'object_timestep_menu_padding_container');
@@ -215,10 +255,14 @@ function main() {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/get_object_properties?object_name='+object_name, true);
         xhr.send();
+
+        var object_properties;
+        var initial_timestep;
+
         xhr.onload = function() {
             var temp_json = JSON.parse(xhr.responseText);
-            var object_properties = temp_json['object_properties'];
-            var initial_timestep = temp_json['initial_timestep'];
+            object_properties = temp_json['object_properties'];
+            initial_timestep = temp_json['initial_timestep'];
 
             object_timestep_current.innerHTML = initial_timestep;
 
@@ -230,6 +274,14 @@ function main() {
                 object_property.innerHTML = property;
                 object_property_container.appendChild(object_property);
             }
+
+            var nodepath = object_name + '/fo/' + initial_timestep + '/mesh/case.nodes.bin';
+            var elementpath = object_name + '/fo/' + initial_timestep + '/mesh/case.dc3d8.bin';
+
+            edit_indexed_arrays(
+                nodepath=nodepath,
+                elementpath=elementpath,
+                timestep=initial_timestep);
         };
 
         var object_controls_container = document.createElement('div');
@@ -269,11 +321,5 @@ function main() {
         object_padding.appendChild(object);
 
         objects_container.appendChild(object_padding);
-
-        edit_indexed_arrays(
-            nodepath='object a/fo/00.1/mesh/case.nodes.bin',
-            elementpath='object a/fo/00.1/mesh/case.dc3d8.bin',
-            timestep='00.1');
-
     }
 }

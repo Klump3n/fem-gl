@@ -71,6 +71,7 @@ class WebServer:
 
         def __init__(self, mesh_directory):
             self.mesh_directory = mesh_directory
+            self.timestep_list = []
 
         @cherrypy.expose
         def index(self):
@@ -149,15 +150,14 @@ class WebServer:
             return json.dumps({'object_properties': object_properties,
                                'initial_timestep': initial_timestep})
 
-        @cherrypy.expose
-        def get_object_timesteps(self, object_name):
-            """Return a list of the available timesteps for a given element on
-            catching 'get_object_timesteps'
+
+        def get_sorted_timesteps(self, object_name):
+            """Generate a sorted list of timesteps.
 
             Go through all the folders in the object/fo folder. Every folder
             here is a timestep.
 
-            Returns a json file.
+            Returns a list of lists.
             """
             object_directory = os.path.join(self.mesh_directory, object_name, 'fo')
 
@@ -171,10 +171,58 @@ class WebServer:
                 if os.path.isdir(timestep_path):
                     object_timesteps.append([float(timestep), timestep])
 
-            object_timesteps = sorted(object_timesteps)
+            sorted_timesteps = sorted(object_timesteps)
+            return sorted_timesteps
+
+        @cherrypy.expose
+        def get_object_timesteps(self, object_name):
+            """Return a list of the available timesteps for a given element on
+            catching 'get_object_timesteps'
+
+            Go through all the folders in the object/fo folder. Every folder
+            here is a timestep.
+
+            Returns a json file.
+            """
+            object_timesteps = self.get_sorted_timesteps(object_name)
+            sorted_timesteps = []
             for timestep in object_timesteps:
                 sorted_timesteps.append(timestep[1])
             return json.dumps({'object_timesteps': sorted_timesteps})
+
+        @cherrypy.expose
+        def get_timestep_before(self, object_name, current_timestep):
+            """Given a timestep, find the previous timestep.
+
+            Return the same timestep if there is no timestep before.
+            """
+            object_timesteps = self.get_sorted_timesteps(object_name)
+            sorted_timesteps = []
+            for it in object_timesteps:
+                sorted_timesteps.append(it[1])
+            object_index = sorted_timesteps.index(current_timestep)
+            if object_index == 0:
+                return json.dumps({'previous_timestep': sorted_timesteps[0]})
+            else:
+                return json.dumps({'previous_timestep': sorted_timesteps[object_index - 1]})
+
+        @cherrypy.expose
+        def get_timestep_after(self, object_name, current_timestep):
+            """Given a timestep, find the next timestep.
+
+            Return the same timestep if there is no timestep after.
+            """
+            object_timesteps = self.get_sorted_timesteps(object_name)
+            sorted_timesteps = []
+            for it in object_timesteps:
+                sorted_timesteps.append(it[1])
+
+            number_of_timesteps = len(sorted_timesteps)
+            object_index = sorted_timesteps.index(current_timestep)
+            if object_index == number_of_timesteps - 1:
+                return json.dumps({'next_timestep': sorted_timesteps[number_of_timesteps - 1]})
+            else:
+                return json.dumps({'next_timestep': sorted_timesteps[object_index + 1]})
 
         @cherrypy.expose
         def mesher_init(self, nodepath, elementpath):
