@@ -1,5 +1,5 @@
 /*
- * fem-gl-toying -- getting to terms with WebGL and JavaScript
+ * fem-gl
  * Copyright (C) 2017 Matthias Plock <matthias.plock@bam.de>
  *
  * This program is free software: you can redistribute it and/or modify
