@@ -134,7 +134,10 @@ function main() {
         var object_current_timestep = document.getElementById('object_timestep_current'+object_name);
         object_current_timestep.innerHTML = timestep;
 
-        update_timestep_data(timestep);
+        // FIXME
+        var field = 'temperatures';
+
+        update_timestep_data(object_name, field, timestep);
     }
 
     function decrease_timestep() {
@@ -151,7 +154,11 @@ function main() {
         previousTimestepPromise.then(function(value) {
             var previous_timestep = value['previous_timestep'];
             if (current_timestep != previous_timestep) {
-                update_timestep_data(previous_timestep);
+
+                // FIXME
+                var field = 'temperatures';
+
+                update_timestep_data(object_name, field, previous_timestep);
                 object_current_timestep.innerHTML = previous_timestep;
             }
         });
@@ -171,7 +178,11 @@ function main() {
         nextTimestepPromise.then(function(value) {
             var next_timestep = value['next_timestep'];
             if (current_timestep != next_timestep) {
-                update_timestep_data(next_timestep);
+
+                // FIXME
+                var field = 'temperatures';
+
+                update_timestep_data(object_name, field, next_timestep);
                 object_current_timestep.innerHTML = next_timestep;
             }
         });
@@ -278,7 +289,12 @@ function main() {
             var nodepath = object_name + '/fo/' + initial_timestep + '/mesh/case.nodes.bin';
             var elementpath = object_name + '/fo/' + initial_timestep + '/mesh/case.dc3d8.bin';
 
+            // FIXME
+            var field = 'temperatures';
+
             edit_indexed_arrays(
+                object_name=object_name,
+                field=field,
                 nodepath=nodepath,
                 elementpath=elementpath,
                 timestep=initial_timestep);

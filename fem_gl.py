@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # fem-gl -- Display fem data in a modern browser via web gl
 #
@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Start a http server for fem-gl and start serving the html directory.
+"""Start a web server for fem-gl. Direct your browser to [HOST_IP]:[PORT]
+with PORT being either 8008 or the supplied value.
 """
 
 import os
@@ -29,9 +30,7 @@ def parse_commandline():
     """Parse the command line and return the parsed arguments.
     """
 
-    parser = argparse.ArgumentParser(
-        description='Start a web server for fem-gl. Direct your browser to '\
-        '[HOST_IP]:[PORT] with PORT being either 8008 or the supplied value.')
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         '-p', '--port', default=8008,
         help='The port for the web server. Defaults to 8008.')

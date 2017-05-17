@@ -244,13 +244,14 @@ class UnpackMesh:
 
         return index_list
 
-    def return_data_for_unique_nodes(self, timestep):
+    def return_data_for_unique_nodes(self, object_name, field, timestep):
         """Returns the (i.e.) temperature data for unique nodes.
         """
         if (self.unique_surface_triangles is None):
             self.generate_unique_surface_triangles()
 
-        timestep_data = self.add_timestep('object a/fo/'+timestep+'/nf/temperatures.bin')
+        # NOTE: Fixme.
+        timestep_data = self.add_timestep(object_name+'/fo/'+timestep+'/nf/'+field+'.bin')
 
         unique_surface_data = []
         for triangle in self.unique_surface_triangles:

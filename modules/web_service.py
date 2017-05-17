@@ -243,12 +243,12 @@ class WebServer:
                                'surface_metadata': surface_metadata.tolist()})
 
         @cherrypy.expose
-        def get_timestep_data(self, timestep):
+        def get_timestep_data(self, object_name, field, timestep):
             """On getting a POST:get_some_data from the webserver we give
             the required data back.
             """
 
-            timestep_data = self.mesh_index.return_data_for_unique_nodes(timestep)
+            timestep_data = self.mesh_index.return_data_for_unique_nodes(object_name, field, timestep)
 
             output_data = []
             for datapoint in timestep_data:

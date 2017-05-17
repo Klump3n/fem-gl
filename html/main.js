@@ -112,8 +112,10 @@ function glRoutine(gl, vs, fs) {
     drawScene();
 }
 
-function update_timestep_data(timestep) {
-    var timestep_promise = postDataPromise('/get_timestep_data?timestep='+timestep);
+function update_timestep_data(object_name, field, timestep) {
+    var timestep_promise = postDataPromise(
+        '/get_timestep_data?object_name=' + object_name +
+            '&field=' + field + '&timestep='+timestep);
     var timestep_data;
 
     timestep_promise.then(function(value){
@@ -125,7 +127,7 @@ function update_timestep_data(timestep) {
     });
 }
 
-function edit_indexed_arrays(nodepath, elementpath, timestep) {
+function edit_indexed_arrays(object_name, field, nodepath, elementpath, timestep) {
 
     var node_file;
     var index_file;
@@ -141,7 +143,9 @@ function edit_indexed_arrays(nodepath, elementpath, timestep) {
         index_file = value['surface_indexfile'];
         meta_file = value['surface_metadata'];
 
-        var initialTimestepDataPromise = postDataPromise('/get_timestep_data?timestep='+timestep);
+        var initialTimestepDataPromise = postDataPromise(
+            '/get_timestep_data?object_name=' + object_name +
+                '&field=' + field + '&timestep='+timestep);
 
         initialTimestepDataPromise.then(function(value){
             timestep_data = value['timestep_data'];
