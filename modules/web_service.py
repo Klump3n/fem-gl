@@ -169,11 +169,11 @@ class WebServer:
             for timestep in dirs_in_fo:
                 timestep_path = os.path.join(object_directory, timestep)
                 if os.path.isdir(timestep_path):
-                    object_timesteps.append(float(timestep))
+                    object_timesteps.append([float(timestep), timestep])
 
             object_timesteps = sorted(object_timesteps)
             for timestep in object_timesteps:
-                sorted_timesteps.append(str(timestep))
+                sorted_timesteps.append(timestep[1])
             return json.dumps({'object_timesteps': sorted_timesteps})
 
         @cherrypy.expose
