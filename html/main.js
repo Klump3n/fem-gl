@@ -186,15 +186,13 @@ function main() {
 
     var timestep_data;
 
-    var dodec_node_promise = getDataSourcePromise("data/dodecahedron.triangles");
-    var dodec_index_promise = getDataSourcePromise("data/dodecahedron.indices");
-    var dodec_colour_promise = getDataSourcePromise("data/dodecahedron.colors");
-
-    Promise.all([dodec_node_promise, dodec_index_promise, dodec_colour_promise]).then(function(value) {
-        node_file = value[0].split(',');
-        index_file = value[1].split(',');
+    var dodec_promise = getDataSourcePromise("data/dodecahedron.json");
+    dodec_promise.then(function(value) {
+        var parsed_json = JSON.parse(value);
+        node_file = parsed_json['vertices'];
+        index_file = parsed_json['indices'];
+        timestep_data = parsed_json['colours'];
         meta_file = [0.0, 0.0, 0.0];
-        timestep_data = value[2].split(',');
 
         loadShaders();
     });
