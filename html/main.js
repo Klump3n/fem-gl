@@ -22,6 +22,7 @@ var gl;
 // Make the array for holding web gl data global.
 var dataHasChanged = false;
 var indexed_arrays;
+var model_metadata;
 
 function grabCanvas(canvasElementName) {
     // Select the canvas element from the html
@@ -43,7 +44,7 @@ function grabCanvas(canvasElementName) {
 }
 
 // This is called with established context and shaders loaded
-function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
+function glRoutine(gl, vs, fs) {
 
     var programInfo = twgl.createProgramInfo(gl, [vs, fs]);
 
@@ -65,9 +66,7 @@ function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
     // Automate this...
     modelMatrix.scaleWorld(scaleTheWorldBy);
 
-    var bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays, drawType=gl.DYNAMIC_DRAW);
-
-    var testBuffer = twgl.createBufferFromTypedArray(gl, indexed_arrays, drawType=gl.DYNAMIC_DRAW);
+    var bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
 
     twgl.resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -79,23 +78,23 @@ function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
 	  gl.enable(gl.CULL_FACE);
 	  gl.enable(gl.DEPTH_TEST);
 
-    var now = 0,
-        then = 0,
-        dt = 0;
-
     var transformationMatrix = twgl.m4.identity();
-
 
     function drawScene(now) {
 
+        // Check if our data has been updated at some point.
         if (dataHasChanged) {
             console.log('Reloading');
-            bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays, drawType=gl.DYNAMIC_DRAW);
+
+            // Update the buffer.
+            bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
+
+            // Center the new object.
+            centerModel = model_metadata;
+            modelMatrix.translateWorld(twgl.v3.negate(centerModel));
+
             dataHasChanged = false;
         };
-
-        dt = (now - then)*.001;    // Conversion to seconds
-        var dist = dt*Math.PI/180;  // in radiant
 
         // Update the model view
         uniforms.u_transform = modelMatrix.updateView();
@@ -107,11 +106,8 @@ function glRoutine(gl, vs, fs, indexed_arrays, model_metadata) {
 
         window.requestAnimationFrame(drawScene);
 
-        // Advance the time after drawing the frame
-        then = now;
-
     }
-    drawScene(now);
+    drawScene();
 }
 
 function edit_indexed_arrays(nodepath, elementpath, timestep) {
@@ -140,13 +136,11 @@ function edit_indexed_arrays(nodepath, elementpath, timestep) {
             indexed_arrays = {
                 indices: {              // NOTE: This must be named indices or it will not work.
                     numComponents: 1,
-                    data: index_file,
-                    drawType: gl.DYNAMIC_DRAW
+                    data: index_file
                 },
                 a_position: {
                     numComponents: 3,
-                    data: node_file,
-                    drawType: gl.DYNAMIC_DRAW
+                    data: node_file
                 },
                 a_temp: {
                     numComponents: 1,
@@ -154,10 +148,12 @@ function edit_indexed_arrays(nodepath, elementpath, timestep) {
                     normalized: false,
                     data: new Float32Array(
                         timestep_data
-                    ),
-                    drawType: gl.DYNAMIC_DRAW
+                    )
                 }
             };
+
+            model_metadata = meta_file;
+
             dataHasChanged = true;
         });
     });
@@ -166,58 +162,6 @@ function edit_indexed_arrays(nodepath, elementpath, timestep) {
 function main() {
     // Init WebGL.
     gl = grabCanvas("webGlCanvas");
-
-    // // -----
-
-    // var nodepath = 'object a/fo/00.1/mesh/case.nodes.bin';
-    // var elementpath = 'object a/fo/00.1/mesh/case.dc3d8.bin';
-
-    // var node_file;
-    // var index_file;
-    // var meta_file;
-
-    // var timestep_data;
-
-    // var meshPromise = postDataPromise('/mesher_init?nodepath='+nodepath+'&elementpath='+elementpath);
-
-    // meshPromise.then(function(value){
-
-    //     node_file = value['surface_nodes'];
-    //     index_file = value['surface_indexfile'];
-    //     meta_file = value['surface_metadata'];
-
-    //     timestep='40.1';
-
-    //     var initialTimestepDataPromise = postDataPromise('/get_timestep_data?timestep='+timestep);
-
-    //     initialTimestepDataPromise.then(function(value){
-    //         timestep_data = value['timestep_data'];
-    //         console.log(index_file);
-    //         console.log(indexed_arrays);
-    //         indexed_arrays = {
-    //             indices: {              // NOTE: This must be named indices or it will not work.
-    //                 numComponents: 1,
-    //                 data: index_file
-    //             },
-    //             a_position: {
-    //                 numComponents: 3,
-    //                 data: node_file
-    //             },
-    //             a_temp: {
-    //                 numComponents: 1,
-    //                 type: gl.FLOAT,
-    //                 normalized: false,
-    //                 data: new Float32Array(
-    //                     timestep_data
-    //                 )
-    //             }
-    //         };
-    //         console.log(indexed_arrays);
-    //         loadShaders();
-    //     });
-    // });
-
-    // // -----
 
     var node_file;
     var index_file;
@@ -282,10 +226,13 @@ function main() {
             }
         };
 
+        // Set model metadata.
+        model_metadata = meta_file;
+
         // ... call the GL routine (i.e. do the graphics stuff)
         glRoutine(gl,
                   vertexShaderSource, fragmentShaderSource,
-                  indexed_arrays, metaSource
+                  metaSource
                  );
     }
 
