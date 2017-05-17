@@ -1,5 +1,5 @@
 /*
- * fem-gl -- getting to terms with WebGL and JavaScript
+ * fem-gl -- Display FEM raw data in a browser
  * Copyright (C) 2017 Matthias Plock <matthias.plock@bam.de>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -235,85 +235,4 @@ function main() {
                   metaSource
                  );
     }
-
-    // // Promise to load the data from file.
-    // var trianglePromise = getDataSourcePromise("data/welding_sim.triangles");
-    // var temperaturePromise = getDataSourcePromise("data/welding_sim.temperatures");
-    // var indexPromise = getDataSourcePromise("data/welding_sim.indices");
-    // var metaPromise = getDataSourcePromise("data/welding_sim.metafile");
-
-
-
-    // var temperaturePromise_new = getDataSourcePromise("data/welding_sim_new.temperatures");
-
-    // // Once all the promises are resolved...
-    // Promise.all(
-    //     [
-    //         trianglePromise,
-    //         temperaturePromise,
-    //         indexPromise,
-    //         metaPromise,
-    //         vertexShaderPromise,
-    //         fragmentShaderPromise,
-    //         temperaturePromise_new,
-    //         meshPromise,
-    //         initialTimestepDataPromise
-    //     ]
-    //     // ... then ...
-    // ).then(function(value) {
-    //     // ... assign data to variables and ...
-    //     // var triangleSource = value[0];
-    //     var triangleSource = node_file;
-
-    //     var temperatureSource = value[1];
-
-    //     // var indexSource = value[2];
-    //     var indexSource = index_file;
-    //     var metaSource = meta_file;
-    //     // var metaSource = value[3];
-
-    //     var vertexShaderSource = value[4];
-    //     var fragmentShaderSource = value[5];
-
-    //     // Temporary..
-    //     // var temperatureSource_new = value[6];
-    //     var temperatureSource_new = timestep_data;
-
-    //     // ... generate an array for web gl to display, then ...
-    //     indexed_arrays = {
-    //         indices: {              // NOTE: This must be named indices or it will not work.
-    //             numComponents: 1,
-    //             // data: indexSource.split(',')
-    //             data: indexSource
-    //         },
-    //         a_position: {
-    //             numComponents: 3,
-    //             data: triangleSource
-    //             // data: triangleSource.split(',')
-    //         },
-    //         a_color: {          // Old kid on the block.
-    //             numComponents: 3,
-    //             type: gl.UNSIGNED_BYTE,
-    //             normalized: true,
-    //             data: new Uint8Array(
-    //                 temperatureSource.split(',')
-    //             )
-    //         },
-    //         a_temp: {           // New kid on the block.
-    //             numComponents: 1,
-    //             type: gl.FLOAT,
-    //             normalized: false,
-    //             data: new Float32Array(
-    //                 temperatureSource_new.split(',')
-    //             )
-    //         }
-
-    //     };
-
-    //     // ... call the GL routine (i.e. do the graphics stuff)
-    //     glRoutine(gl,
-    //               vertexShaderSource, fragmentShaderSource,
-    //               indexed_arrays, metaSource
-    //              );
-    // });
 };
