@@ -22,8 +22,10 @@ var gl;
 // Make the array for holding web gl data global.
 var vertexDataHasChanged = false;
 var fragmentDataHasChanged = false;
-var indexed_arrays;
+var bufferDataArray;
 var model_metadata;
+
+var bufferIndexArray;
 
 function grabCanvas(canvasElementName) {
     // Select the canvas element from the html
@@ -67,7 +69,7 @@ function glRoutine(gl, vs, fs) {
     // Automate this...
     modelMatrix.scaleWorld(scaleTheWorldBy);
 
-    var bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
+    var bufferInfo = twgl.createBufferInfoFromArrays(gl, bufferDataArray);
 
     twgl.resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -86,7 +88,7 @@ function glRoutine(gl, vs, fs) {
         // Check if our data has been updated at some point.
         if (vertexDataHasChanged) {
             // Update the buffer.
-            bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
+            bufferInfo = twgl.createBufferInfoFromArrays(gl, bufferDataArray);
 
             // Center the new object.
             centerModel = model_metadata;
@@ -94,7 +96,7 @@ function glRoutine(gl, vs, fs) {
 
             vertexDataHasChanged = false;
         } else if (fragmentDataHasChanged){
-            bufferInfo = twgl.createBufferInfoFromArrays(gl, indexed_arrays);
+            bufferInfo = twgl.createBufferInfoFromArrays(gl, bufferDataArray);
             fragmentDataHasChanged = false;
         };
 
@@ -112,25 +114,28 @@ function glRoutine(gl, vs, fs) {
     drawScene();
 }
 
-function update_timestep_data(object_name, field, timestep) {
+function updateFragmentShaderData(object_name, field, timestep) {
     var timestep_promise = postDataPromise(
         '/get_timestep_data?object_name=' + object_name +
             '&field=' + field + '&timestep='+timestep);
     var timestep_data;
 
     timestep_promise.then(function(value){
-        timestep_data = value['timestep_data'];
+        timestep_data = expandDataWithIndices(
+            bufferIndexArray,
+            value['timestep_data'],
+            chunksize=1
+        );
 
-        indexed_arrays['a_temp']['data'] = new Float32Array(timestep_data);
+        bufferDataArray['a_temp']['data'] = new Float32Array(timestep_data);
 
         fragmentDataHasChanged = true;
     });
 }
 
-function edit_indexed_arrays(object_name, field, nodepath, elementpath, timestep) {
+function updateVertexShaderData(object_name, field, nodepath, elementpath, timestep) {
 
     var node_file;
-    var index_file;
     var meta_file;
 
     var timestep_data;
@@ -139,41 +144,85 @@ function edit_indexed_arrays(object_name, field, nodepath, elementpath, timestep
 
     meshPromise.then(function(value){
 
-        node_file = value['surface_nodes'];
-        index_file = value['surface_indexfile'];
+        bufferIndexArray = value['surface_indexfile'];
+        node_file = expandDataWithIndices(
+            bufferIndexArray,
+            value['surface_nodes'],
+            chunksize=3
+        );
         meta_file = value['surface_metadata'];
+
+        var bary_coords = generateBarycentricCoordinatesFromIndices(bufferIndexArray);
 
         var initialTimestepDataPromise = postDataPromise(
             '/get_timestep_data?object_name=' + object_name +
                 '&field=' + field + '&timestep='+timestep);
 
         initialTimestepDataPromise.then(function(value){
-            timestep_data = value['timestep_data'];
+            timestep_data = expandDataWithIndices(
+                bufferIndexArray,
+                value['timestep_data'],
+                chunksize=1
+            );
 
-            indexed_arrays = {
-                indices: {              // NOTE: This must be named indices or it will not work.
-                    numComponents: 1,
-                    data: index_file
-                },
-                a_position: {
-                    numComponents: 3,
-                    data: node_file
-                },
-                a_temp: {
-                    numComponents: 1,
-                    type: gl.FLOAT,
-                    normalized: false,
-                    data: new Float32Array(
-                        timestep_data
-                    )
-                }
-            };
+            bufferDataArray['a_position']['data'] = node_file;
+            bufferDataArray['a_temp']['data'] = new Float32Array(timestep_data);
+            bufferDataArray['a_bc']['data'] = bary_coords;
+            // bufferDataArray = {
+            //     // indices: {              // NOTE: This must be named indices or it will not work.
+            //     //     numComponents: 1,
+            //     //     data: bufferIndexArray
+            //     // },
+            //     a_position: {
+            //         numComponents: 3,
+            //         data: node_file
+            //     },
+            //     a_temp: {
+            //         numComponents: 1,
+            //         type: gl.FLOAT,
+            //         normalized: false,
+            //         data: new Float32Array(
+            //             timestep_data
+            //         )
+            //     }
+            // };
 
             model_metadata = meta_file;
 
             vertexDataHasChanged = true;
         });
     });
+}
+
+function expandDataWithIndices(indices, data, chunksize) {
+    // Given some index data for a non-redundant vertex array, expand this
+    // vertex array data so we don't need the index data.
+
+    var expanded_data = [];
+    for (index in indices) {
+        for (var i = 0; i < chunksize; i++) {
+            expanded_data.push(data[chunksize * indices[index] + i]);
+        }
+
+    }
+    return expanded_data;
+}
+
+function generateBarycentricCoordinatesFromIndices(indices) {
+    // Generate barycentric coordinates from a given set of indices.
+    // This is for generation of a wireframe mesh overlay.
+
+    var barycentric_coordinates = [];
+    for (index in indices) {
+        if (index % 3 == 0) {
+            barycentric_coordinates.push(1., 0., 0.);
+        } else if ((index - 1) % 3 == 0 ) {
+            barycentric_coordinates.push(0., 1., 0.);
+        } else if ((index - 2) % 3 == 0 ) {
+            barycentric_coordinates.push(0., 0., 1.);
+        };
+    }
+    return barycentric_coordinates;
 }
 
 function main() {
@@ -208,30 +257,36 @@ function main() {
             vertexShaderSource = value[0];
             fragmentShaderSource = value[1];
 
-            prepareArrays();
+            beginRendering();
         });
     }
 
-    function prepareArrays() {
+    function beginRendering() {
 
-        var triangleSource = node_file;
+
         var indexSource = index_file;
-        var metaSource = meta_file;
-        var temperatureSource = timestep_data;
 
-        indexed_arrays = {
-            indices: {              // NOTE: This must be named indices or it will not work.
-                drawType: gl.DYNAMIC_DRAW,
-                numComponents: 1,
-                data: indexSource
-            },
+        var bary_coords = generateBarycentricCoordinatesFromIndices(indexSource);
+
+        var triangleSource = expandDataWithIndices(indexSource, node_file, chunksize=3);
+        var temperatureSource = expandDataWithIndices(indexSource, timestep_data, chunksize=1);
+        var metaSource = meta_file;
+
+        bufferDataArray = {
+            // indices: {              // NOTE: This must be named indices or it will not work.
+            //     drawType: gl.DYNAMIC_DRAW,
+            //     numComponents: 1,
+            //     data: indexSource
+            // },
             a_position: {
-                drawType: gl.DYNAMIC_DRAW,
                 numComponents: 3,
                 data: triangleSource
             },
+            a_bc: {
+                numComponents: 3,
+                data: bary_coords
+            },
             a_temp: {
-                drawType: gl.DYNAMIC_DRAW,
                 numComponents: 1,
                 type: gl.FLOAT,
                 normalized: false,

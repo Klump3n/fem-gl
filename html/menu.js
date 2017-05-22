@@ -137,7 +137,7 @@ function main() {
         // FIXME
         var field = 'temperatures';
 
-        update_timestep_data(object_name, field, timestep);
+        updateFragmentShaderData(object_name, field, timestep);
     }
 
     function decrease_timestep() {
@@ -158,7 +158,7 @@ function main() {
                 // FIXME
                 var field = 'temperatures';
 
-                update_timestep_data(object_name, field, previous_timestep);
+                updateFragmentShaderData(object_name, field, previous_timestep);
                 object_current_timestep.innerHTML = previous_timestep;
             }
         });
@@ -182,7 +182,7 @@ function main() {
                 // FIXME
                 var field = 'temperatures';
 
-                update_timestep_data(object_name, field, next_timestep);
+                updateFragmentShaderData(object_name, field, next_timestep);
                 object_current_timestep.innerHTML = next_timestep;
             }
         });
@@ -292,7 +292,7 @@ function main() {
             // FIXME
             var field = 'temperatures';
 
-            edit_indexed_arrays(
+            updateVertexShaderData(
                 object_name=object_name,
                 field=field,
                 nodepath=nodepath,

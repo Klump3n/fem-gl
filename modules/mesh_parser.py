@@ -28,7 +28,6 @@ import numpy as np
 import matplotlib.cm as cm
 import sys
 
-
 class UnpackMesh:
     """Unpacks mesh data from two binary files and does some magic to it.
     """
@@ -110,7 +109,7 @@ class UnpackMesh:
         """Finds the outward faces of the mesh (in other words: the surface).
         Returns a numpy array with the surface faces.
 
-        The mesh consists of cubish elements with corner nodes.
+        The mesh consists of cubic elements with corner nodes.
         Count the unique occurrences of each node. For each element generate
         the six (outward pointing) faces. Iterate over all the points of
         each face and add the occurrences (as previously generated) up.
@@ -258,7 +257,6 @@ class UnpackMesh:
             unique_surface_data.append(timestep_data[triangle])
 
         return unique_surface_data
-
 
     def generate_unique_surface_triangles(self):
         """Generate the unique surface triangles from all the surface_triangles.
