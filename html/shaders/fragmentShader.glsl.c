@@ -59,30 +59,21 @@ float red(in float temp){
 /* From http://codeflow.org/entries/2012/aug/02/easy-wireframe-display-with-barycentric-coordinates/ */
 float edgeFactor(){
   vec3 d = fwidth(v_bc);
-  if (any(greaterThan(d, vec3(20.0)))) {
-      d = vec3(0.0);
-    }
+  /* if (any(greaterThan(d, vec3(20.0)))) { */
+  /*     d = vec3(0.0); */
+  /*   } */
   vec3 a3 = smoothstep(vec3(0.0), d*0.5, v_bc);
   return min(min(a3.x, a3.y), a3.z);
 }
 
 void main() {
 
-  /* outColor.r = red(v_temp); */
-  /* outColor.g = green(v_temp); */
-  /* outColor.b = blue(v_temp); */
-  /* outColor.a = 1.0; */
-
-  /* vec3 outval = mix(vec3(0.0), vec3(red(v_temp), green(v_temp), blue(v_temp)), clamp(edgeFactor()/1000.0*v_gl_Position.z, 0.0, 1.0)); */
-  /* vec3 outval = vec3(red(v_temp), green(v_temp), blue(v_temp)); */
   vec3 outval = mix(vec3(0.0), vec3(red(v_temp), green(v_temp), blue(v_temp)), edgeFactor());
   outColor = vec4(outval, 1.0);
-  /* outColor = vec4(0.0, 0.0, 0.0, (1.0-edgeFactor())*0.95); */
-  /* if(any(lessThan(v_bc, vec3(.005)))) { */
-  /*   outColor = vec4(0.0, 0.0, 0.0, 1.0); */
-  /* } */
-  /* else{ */
-  /*   outColor = vec4(red(v_temp), green(v_temp), blue(v_temp), 1.0); */
-  /* } */
 
+  /* vec3 rgb = vec3(red(v_temp), green(v_temp), blue(v_temp)); */
+  /* vec3 oneoverz_rgb = 1.0*(1.0 - edgeFactor()) * vec3(red(v_temp), green(v_temp), blue(v_temp)); */
+  /* outColor = vec4(rgb - oneoverz_rgb, 1.0); */
+
+  /* outColor = vec4(0.0, 0.0, 0.0, (1.0-edgeFactor())*0.95); */
 }
