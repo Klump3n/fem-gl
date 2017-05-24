@@ -49,8 +49,7 @@ function grabCanvas(canvasElementName) {
 // This is called with established context and shaders loaded
 function glRoutine(gl, vs, fs) {
 
-    var programInfo = twgl.createProgramInfo(gl, [vs, fs]);
-
+    // Prepare the viewport.
     var modelMatrix = new ModelMatrix(gl);
 
     // var centerModel = new Float32Array(model_metadata.split(','));
@@ -69,10 +68,19 @@ function glRoutine(gl, vs, fs) {
     // Automate this...
     modelMatrix.scaleWorld(scaleTheWorldBy);
 
-    var bufferInfo = twgl.createBufferInfoFromArrays(gl, bufferDataArray);
-
     twgl.resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+    // var fbo = twgl.createFramebufferInfo(gl);
+    // twgl.bindFramebufferInfo(gl);
+    // twgl.resizeFramebufferInfo(gl, fbo);
+
+
+    // Create opengl programs.
+    var programInfo = twgl.createProgramInfo(gl, [vs, fs]);
+
+    var bufferInfo = twgl.createBufferInfoFromArrays(gl, bufferDataArray);
+ 
 
     var uniforms = {
         u_transform: twgl.m4.identity() // mat4
@@ -168,24 +176,6 @@ function updateVertexShaderData(object_name, field, nodepath, elementpath, times
             bufferDataArray['a_position']['data'] = node_file;
             bufferDataArray['a_temp']['data'] = new Float32Array(timestep_data);
             bufferDataArray['a_bc']['data'] = bary_coords;
-            // bufferDataArray = {
-            //     // indices: {              // NOTE: This must be named indices or it will not work.
-            //     //     numComponents: 1,
-            //     //     data: bufferIndexArray
-            //     // },
-            //     a_position: {
-            //         numComponents: 3,
-            //         data: node_file
-            //     },
-            //     a_temp: {
-            //         numComponents: 1,
-            //         type: gl.FLOAT,
-            //         normalized: false,
-            //         data: new Float32Array(
-            //             timestep_data
-            //         )
-            //     }
-            // };
 
             model_metadata = meta_file;
 

@@ -59,17 +59,32 @@ float red(in float temp){
 /* From http://codeflow.org/entries/2012/aug/02/easy-wireframe-display-with-barycentric-coordinates/ */
 float edgeFactor(){
   vec3 d = fwidth(v_bc);
-  /* if (any(greaterThan(d, vec3(20.0)))) { */
-  /*     d = vec3(0.0); */
-  /*   } */
   vec3 a3 = smoothstep(vec3(0.0), d*0.5, v_bc);
   return min(min(a3.x, a3.y), a3.z);
 }
 
 void main() {
 
-  vec3 outval = mix(vec3(0.0), vec3(red(v_temp), green(v_temp), blue(v_temp)), edgeFactor());
-  outColor = vec4(outval, 1.0);
+  vec3 dbc = fwidth(v_bc);
+  /* if (any(greaterThan(dbc, vec3(0.5)))) { */
+  /*   outColor = vec4(vec3(red(v_temp), green(v_temp), blue(v_temp)), 1.0); */
+  /* } */
+  /* else { */
+  /*   vec3 a3 = smoothstep(vec3(0.0), dbc*1.5, v_bc); */
+  /*   float edgeFactor = min(min(a3.x, a3.y), a3.z); */
+  /*   vec3 outval = mix(vec3(0.0), vec3(red(v_temp), green(v_temp), blue(v_temp)), edgeFactor); */
+  /*   outColor = vec4(outval, 1.0); */
+  /*   /\* outColor = vec4(vec3(red(v_temp), green(v_temp), blue(v_temp)), 1.0); *\/ */
+  /* } */
+
+  vec3 fadetest = vec3(0.0) + (vec3(red(v_temp), green(v_temp), blue(v_temp)) - vec3(0.0))*edgeFactor();
+  vec3 outval = mix(vec3(0.0), vec3(red(v_temp), green(v_temp), blue(v_temp)), .5*edgeFactor());
+  outColor = vec4(fadetest, 1.0);
+  /* outColor = vec4(0.0, 0.0, 0.0, (1.0-edgeFactor())); */
+
+
+  /* vec3 outval = mix(vec3(0.0), vec3(red(v_temp), green(v_temp), blue(v_temp)), edgeFactor()); */
+  /* outColor = vec4(outval, 1.0); */
 
   /* vec3 rgb = vec3(red(v_temp), green(v_temp), blue(v_temp)); */
   /* vec3 oneoverz_rgb = 1.0*(1.0 - edgeFactor()) * vec3(red(v_temp), green(v_temp), blue(v_temp)); */
