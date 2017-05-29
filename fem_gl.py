@@ -30,10 +30,13 @@ def parse_commandline():
     """Parse the command line and return the parsed arguments.
     """
 
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         '-p', '--port', default=8008,
-        help='The port for the web server. Defaults to 8008.')
+        help='The port for the web server.')
     parser.add_argument(
         '-m', '--mesh-dir', required=True,
         help='The directory in which we want to look for mesh files.')
