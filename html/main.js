@@ -25,6 +25,9 @@ var fragmentDataHasChanged = false;
 var bufferDataArray;
 var model_metadata;
 
+var fragmentShaderTMin = 0.0;
+var fragmentShaderTMax = 1000.0;
+
 var bufferIndexArray;
 
 function grabCanvas(canvasElementName) {
@@ -80,7 +83,6 @@ function glRoutine(gl, vs, fs) {
     var programInfo = twgl.createProgramInfo(gl, [vs, fs]);
 
     var bufferInfo = twgl.createBufferInfoFromArrays(gl, bufferDataArray);
- 
 
     var uniforms = {
         u_transform: twgl.m4.identity() // mat4
@@ -129,11 +131,18 @@ function updateFragmentShaderData(object_name, field, timestep) {
     var timestep_data;
 
     timestep_promise.then(function(value){
+        var normalisedTimestepData = normaliseFieldValues(
+            value['timestep_data'],
+            fragmentShaderTMin,
+            fragmentShaderTMax
+        );
         timestep_data = expandDataWithIndices(
             bufferIndexArray,
-            value['timestep_data'],
+            normalisedTimestepData,
             chunksize=1
         );
+
+        averageFieldValsOverElement(timestep_data);
 
         bufferDataArray['a_temp']['data'] = new Float32Array(timestep_data);
 
@@ -167,11 +176,18 @@ function updateVertexShaderData(object_name, field, nodepath, elementpath, times
                 '&field=' + field + '&timestep='+timestep);
 
         initialTimestepDataPromise.then(function(value){
+            var normalisedTimestepData = normaliseFieldValues(
+                value['timestep_data'],
+                fragmentShaderTMin,
+                fragmentShaderTMax
+            );
             timestep_data = expandDataWithIndices(
                 bufferIndexArray,
-                value['timestep_data'],
+                normalisedTimestepData,
                 chunksize=1
             );
+
+            averageFieldValsOverElement(timestep_data);
 
             bufferDataArray['a_position']['data'] = node_file;
             bufferDataArray['a_temp']['data'] = new Float32Array(timestep_data);
@@ -198,6 +214,23 @@ function expandDataWithIndices(indices, data, chunksize) {
     return expanded_data;
 }
 
+function averageFieldValsOverElement(fieldValues) {
+    // Set the values on an element to the average of the node values.
+
+    var averageArray = [];
+
+    // Assume the fieldvalues are divisible by 3. This should always be the
+    // case. If not then something is borked..
+    for (var it = 0; it < fieldValues.length/3; it++) {
+        var avgValue = fieldValues[3*it] + fieldValues[3*it+1] + fieldValues[3*it+2];
+        avgValue = avgValue/3;
+        for (var jt = 0; jt < 3; jt++) {
+            averageArray.push(avgValue);
+        }
+    }
+    return averageArray;
+}
+
 function generateBarycentricCoordinatesFromIndices(indices) {
     // Generate barycentric coordinates from a given set of indices.
     // This is for generation of a wireframe mesh overlay.
@@ -213,6 +246,16 @@ function generateBarycentricCoordinatesFromIndices(indices) {
         };
     }
     return barycentric_coordinates;
+}
+
+function normaliseFieldValues(originalField, minVal, maxVal) {
+    // Normalise the fieldvalues between 0 and 1.
+    var normalisedField = [];
+    var deltaVal = maxVal - minVal;
+    for (index in originalField) {
+        normalisedField.push((originalField[index] - minVal)/deltaVal);
+    }
+    return normalisedField;
 }
 
 function main() {
@@ -259,7 +302,13 @@ function main() {
         var bary_coords = generateBarycentricCoordinatesFromIndices(indexSource);
 
         var triangleSource = expandDataWithIndices(indexSource, node_file, chunksize=3);
-        var temperatureSource = expandDataWithIndices(indexSource, timestep_data, chunksize=1);
+        var normalisedTimestepData = normaliseFieldValues(
+            timestep_data,
+            fragmentShaderTMin,
+            fragmentShaderTMax
+        );
+        var temperatureSource = expandDataWithIndices(indexSource, normalisedTimestepData, chunksize=1);
+        // temperatureSource = averageFieldValsOverElement(temperatureSource);
         var metaSource = meta_file;
 
         bufferDataArray = {
