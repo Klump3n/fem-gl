@@ -180,6 +180,11 @@ function ModelMatrix(gl, fovIn, aspectIn, zNearIn, zFarIn) {
         var factor = 10;
         var delta = factor*Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
 
+        // Prevent negative zooming.
+        if (that.viewerPosition[2] + delta < 0){
+            delta = 0;
+        }
+
         that.viewerPosition[2] = that.viewerPosition[2] + delta;
         that.updateCamera(that.viewerPosition, that.targetPosition, that.upVector);
 
