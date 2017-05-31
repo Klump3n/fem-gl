@@ -25,7 +25,7 @@ var fragmentDataHasChanged = false;
 var bufferDataArray;
 var model_metadata;
 
-var fragmentShaderTMin = 0.0;
+var fragmentShaderTMin = 100.0;
 var fragmentShaderTMax = 1000.0;
 
 var bufferIndexArray;
@@ -45,6 +45,8 @@ function grabCanvas(canvasElementName) {
         console.log("No WebGL2");
         Error("No WebGL2");
     }
+
+    addColorbar(fragmentShaderTMin, fragmentShaderTMax);
 
     return gl;
 }

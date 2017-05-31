@@ -45,7 +45,7 @@ vec3 fragmentColour(in float temp) {
     return vec3(0.501961f, 0.000000f, 1.000000f);
   }
   else if ((temp >= 0.047619f) && (temp < 0.095238f)) {
-    return vec3(0.250980f, 0.000000f, 0.901961f);
+    return vec3(0.200000f, 0.000000f, 1.000000f);
   }
   else if ((temp >= 0.095238f) && (temp < 0.142857f)) {
     return vec3(0.000000f, 0.000000f, 0.800000f);
@@ -105,7 +105,7 @@ vec3 fragmentColour(in float temp) {
     return vec3(0.749020f, 0.000000f, 0.000000f);
   }
   else {
-    return vec3(0.0f, .0f, .0f);
+    return vec3(0.0f, 0.0f, 0.0f);
   }
 }
 

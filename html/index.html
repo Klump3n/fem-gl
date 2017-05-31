@@ -22,7 +22,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>FemGL alpha</title>
-      <link rel="stylesheet" href="menu.css">
+      <link rel="stylesheet" href="menu.css" />
+      <link rel="stylesheet" href="colorbar.css" />
   </head>
   <body>
     <!-- The canvas element for displaying something via WebGL. Never 
@@ -36,7 +37,15 @@
         </div>
       </div>
       <div class="objects_container" id="objects_container"></div> <!-- The menus will be dropped here. -->
-    </div>    
+    </div>
+
+    <!-- Colorbar stuff -->
+    <div class="colorbar_container_outer">
+      <div class="colorbar_container_inner">
+        <div id="colorbar"></div>
+      </div>
+    </div>
+    <!-- Colorbar stuff ends -->
   </body>
 
   <!-- Import twgl.js WebGL helper functions -->
@@ -46,5 +55,6 @@
   <script src="loadData.js"></script>
   <script src="setView.js"></script>
   <!-- <script src="setCamera.js"></script> -->
+  <script src="colorbar.js"></script>
   <script src="main.js" onload="main()"></script>
 </html>
