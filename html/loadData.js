@@ -88,3 +88,31 @@ function postDataPromise(postString) {
 	      xhr.send();
     });
 }
+
+// Post a json string to an url on the server and return a promise for some
+// data.
+function postJSONPromise(post_url, json_string) {
+    // Return a promise for XHR data
+    return new Promise(function(resolve, reject) {
+	      var xhr = new XMLHttpRequest;
+	      xhr.responseType = 'text';
+	      xhr.open('POST', '/' + post_url, true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+	      // Send the request
+	      xhr.send(JSON.stringify(json_string));
+	      xhr.onload = function() {
+	          if (xhr.status === 200) {
+		            // Tries to get the shader source
+                var result = xhr.responseText;
+		            resolve(JSON.parse(result));
+	          } else {
+		            // If unsuccessful return an error
+		            reject(Error('postJSONData() - ERROR with '+post_url+' and '+json_string));
+	          }
+	      };
+	      xhr.onerror = function() {
+	          // Maybe we have more severe problems. Also return an error then
+	          reject(Error('postJSONData() - network issues'));
+	      };
+    });
+}

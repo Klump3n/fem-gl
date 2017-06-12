@@ -127,9 +127,13 @@ function glRoutine(gl, vs, fs) {
 }
 
 function updateFragmentShaderData(object_name, field, timestep) {
-    var timestep_promise = postDataPromise(
-        '/get_timestep_data?object_name=' + object_name +
-            '&field=' + field + '&timestep='+timestep);
+    var timestep_promise = postJSONPromise(
+        'get_timestep_data',
+        {'object_name': object_name, 'field': field, 'timestep': timestep}
+    );
+    // var timestep_promise = postDataPromise(
+    //     '/get_timestep_data?object_name=' + object_name +
+    //         '&field=' + field + '&timestep='+timestep);
     var timestep_data;
 
     timestep_promise.then(function(value){
@@ -159,7 +163,11 @@ function updateVertexShaderData(object_name, field, nodepath, elementpath, times
 
     var timestep_data;
 
-    var meshPromise = postDataPromise('/mesher_init?nodepath='+nodepath+'&elementpath='+elementpath);
+    var meshPromise = postJSONPromise(
+        'mesher_init',
+        {'nodepath': nodepath, 'elementpath': elementpath}
+    );
+    // var meshPromise = postDataPromise('/mesher_init?nodepath='+nodepath+'&elementpath='+elementpath);
 
     meshPromise.then(function(value){
 
@@ -173,9 +181,13 @@ function updateVertexShaderData(object_name, field, nodepath, elementpath, times
 
         var bary_coords = generateBarycentricCoordinatesFromIndices(bufferIndexArray);
 
-        var initialTimestepDataPromise = postDataPromise(
-            '/get_timestep_data?object_name=' + object_name +
-                '&field=' + field + '&timestep='+timestep);
+        var initialTimestepDataPromise = postJSONPromise(
+            'get_timestep_data',
+            {'object_name': object_name, 'field': field, 'timestep': timestep}
+        );
+        // var initialTimestepDataPromise = postDataPromise(
+        //     '/get_timestep_data?object_name=' + object_name +
+        //         '&field=' + field + '&timestep='+timestep);
 
         initialTimestepDataPromise.then(function(value){
             var normalisedTimestepData = normaliseFieldValues(

@@ -16,6 +16,7 @@ function main() {
         xhr.send();
         xhr.onload = function() {
             var temp_json = JSON.parse(xhr.responseText);
+
             object_list = temp_json['data_folders'];
 
             for (var it in object_list) {
@@ -105,8 +106,9 @@ function main() {
         // Load the timesteps via XHR. Do this every time to be able to
         // update the menu.
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/get_object_timesteps?object_name='+object_name, true);
-        xhr.send();
+        xhr.open('POST', '/get_object_timesteps', true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xhr.send(JSON.stringify({'object_name': object_name}));
         xhr.onload = function() {
             var temp_json = JSON.parse(xhr.responseText);
             var timesteps = temp_json['object_timesteps'];
@@ -147,9 +149,13 @@ function main() {
 
         var current_timestep = object_current_timestep.innerHTML;
 
-        var previousTimestepPromise = postDataPromise(
-            '/get_timestep_before?current_timestep='+
-                current_timestep+'&object_name='+object_name);
+        var previousTimestepPromise = postJSONPromise(
+            'get_timestep_before',
+            {'current_timestep': current_timestep, 'object_name': object_name}
+        );
+        // var previousTimestepPromise = postDataPromise(
+        //     '/get_timestep_before?current_timestep='+
+        //         current_timestep+'&object_name='+object_name);
 
         previousTimestepPromise.then(function(value) {
             var previous_timestep = value['previous_timestep'];
@@ -171,9 +177,13 @@ function main() {
 
         var current_timestep = object_current_timestep.innerHTML;
 
-        var nextTimestepPromise = postDataPromise(
-            '/get_timestep_after?current_timestep='+
-                current_timestep+'&object_name='+object_name);
+        var nextTimestepPromise = postJSONPromise(
+            'get_timestep_after',
+            {'current_timestep': current_timestep, 'object_name': object_name}
+        );
+        // var nextTimestepPromise = postDataPromise(
+        //     '/get_timestep_after?current_timestep='+
+        //         current_timestep+'&object_name='+object_name);
 
         nextTimestepPromise.then(function(value) {
             var next_timestep = value['next_timestep'];
@@ -264,8 +274,11 @@ function main() {
         object_property_container.setAttribute('id', 'object_property_container'+object_name);
 
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/get_object_properties?object_name='+object_name, true);
-        xhr.send();
+        // xhr.open('POST', '/get_object_properties?object_name='+object_name, true);
+        // xhr.send();
+        xhr.open('POST', '/get_object_properties', true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xhr.send(JSON.stringify({'object_name': object_name}));
 
         var object_properties;
         var initial_timestep;
